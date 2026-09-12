@@ -60,7 +60,22 @@ class MockChatbotDataSource implements ChatbotDataSource {
     String reply;
     List<String> quickReplies = const [];
 
-    if (lower.contains('appointment')) {
+    if (lower.contains('tomorrow morning') || lower.contains('next week')) {
+      reply = 'Great! Your appointment has been successfully booked.';
+      return ChatMessage(
+        id: generateId(),
+        sender: ChatSender.assistant,
+        text: reply,
+        timestamp: DateTime.now(),
+        actionType: 'booking_success',
+      );
+    } else if (lower.contains('book') && lower.contains('appointment')) {
+      reply = 'When would you like to book your appointment for, and with which doctor?';
+      quickReplies = const [
+        'Tomorrow morning',
+        'Next week',
+      ];
+    } else if (lower.contains('appointment')) {
       final upcoming = _db.appointments
           .where((a) => a.patientId == patientId && a.scheduledAt.isAfter(DateTime.now()))
           .toList()
@@ -90,17 +105,44 @@ class MockChatbotDataSource implements ChatbotDataSource {
           "I'm sorry you're not feeling well. For persistent or severe symptoms, please book an appointment "
           'so your doctor can take a look. In the meantime, rest and stay hydrated.';
       quickReplies = const ['Book an appointment'];
-    } else if (lower.contains('book') && lower.contains('appointment')) {
-      reply = 'You can book a new appointment from the Appointments tab — tap the + icon to pick a time.';
     } else if (lower.contains('thank')) {
       reply = "You're welcome! Let me know if there's anything else I can help with.";
+    } else if (lower.contains('dark mode') || lower.contains('dark theme')) {
+      reply = 'I have enabled dark mode for you!';
+      return ChatMessage(
+        id: generateId(),
+        sender: ChatSender.assistant,
+        text: reply,
+        timestamp: DateTime.now(),
+        actionType: 'enable_dark_mode',
+      );
+    } else if (lower.contains('light mode') || lower.contains('light theme')) {
+      reply = 'I have switched back to light mode!';
+      return ChatMessage(
+        id: generateId(),
+        sender: ChatSender.assistant,
+        text: reply,
+        timestamp: DateTime.now(),
+        actionType: 'enable_light_mode',
+      );
+    } else if (lower.contains('setting') || lower.contains('profile')) {
+      reply = 'I can help you navigate to your settings and profile page.';
+      return ChatMessage(
+        id: generateId(),
+        sender: ChatSender.assistant,
+        text: reply,
+        timestamp: DateTime.now(),
+        actionType: 'open_settings',
+      );
     } else {
       reply =
           "I can help with questions about your appointments, medications, or general symptoms. "
+          'You can also ask me to change settings, like "Turn on dark mode". '
           'What would you like to know?';
       quickReplies = const [
         'When is my next appointment?',
-        'What medications am I taking?',
+        'Turn on dark mode',
+        'Open settings',
       ];
     }
 

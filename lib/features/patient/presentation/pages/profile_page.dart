@@ -16,6 +16,7 @@ import '../providers/patient_providers.dart';
 import '../widgets/danger_zone_section.dart';
 import '../widgets/edit_health_profile_sheet.dart';
 import '../widgets/profile_settings_section.dart';
+import 'account_deletion_page.dart';
 
 /// P9 — Profile: grouped rows, toggles, danger zone.
 class ProfilePage extends ConsumerStatefulWidget {
@@ -42,28 +43,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     }
   }
 
-  Future<void> _confirmDelete(String patientId) async {
-    final confirmed = await showConfirmDialog(
-      context,
-      title: 'Delete account?',
-      message:
-          'This permanently removes your profile and health data. This cannot be undone.',
-      confirmLabel: 'Delete',
-      isDestructive: true,
+  void _navigateToAccountDeletion(String patientId) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AccountDeletionPage(patientId: patientId),
+      ),
     );
-    if (confirmed && mounted) {
-      try {
-        await ref.read(patientRepositoryProvider).deleteAccount(patientId);
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text('$e')));
-        return;
-      }
-      await ref.read(authControllerProvider.notifier).logout();
-      if (mounted) context.go(RoutePaths.login);
-    }
   }
 
   @override
@@ -77,7 +62,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile'), centerTitle: false),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: EdgeInsets.fromLTRB(16, 8, 16, 100 + MediaQuery.paddingOf(context).bottom),
         children: [
           Row(
             children: [
@@ -193,7 +178,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           const SizedBox(height: 20),
           DangerZoneSection(
             onLogout: _confirmLogout,
-            onDeleteAccount: () => _confirmDelete(user.id),
+            onDeleteAccount: () => _navigateToAccountDeletion(user.id),
           ),
         ],
       ),

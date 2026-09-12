@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/appointments/presentation/pages/appointment_detail_page.dart';
 import '../../features/appointments/presentation/pages/appointments_list_page.dart';
-import '../../features/appointments/presentation/pages/queue_number_page.dart';
+
 import '../../features/auth/domain/entities/user_role.dart';
 import '../../features/auth/presentation/pages/force_password_change_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -194,14 +194,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: RoutePaths.patientQueue,
-                builder: (_, _) => const QueueNumberPage(),
-              ),
-            ],
-          ),
+
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -230,9 +223,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RoutePaths.doctorPatientHistory,
-        builder: (_, state) => PatientHistoryPage(
-          patientId: state.pathParameters['patientId']!,
-          appointmentId: state.uri.queryParameters['appointmentId'],
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: PatientHistoryPage(
+            patientId: state.pathParameters['patientId']!,
+            appointmentId: state.uri.queryParameters['appointmentId'],
+          ),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
         ),
       ),
       StatefulShellRoute.indexedStack(
@@ -288,8 +287,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           navigationShell: shell,
           items: kRoleNavConfig[UserRole.pharmacist]!.items,
           accentColor: context.colors.clinicianAccent,
-          userName: ref.read(currentUserProvider)?.fullName ?? 'Pharmacist',
-          roleLabel: 'Pharmacist',
+          userName: ref.read(currentUserProvider)?.fullName ?? 'Clinic Assistant',
+          roleLabel: 'Clinic Assistant',
           avatarUrl: ref.read(currentUserProvider)?.avatarUrl,
         ),
         branches: [

@@ -50,7 +50,7 @@ class MockAuthDataSource implements AuthDataSource {
     // The mock has to enforce both halves or tests pass against a rule the real
     // backend does not have.
     if (!isWebPlatform && match.role != UserRole.patient) {
-      throw AuthException('Doctor and pharmacist accounts sign in through the MyPulse360 web dashboard.');
+      throw AuthException('Doctor and clinic assistant accounts sign in through the MyPulse360 web dashboard.');
     }
     if (isWebPlatform && match.role == UserRole.patient) {
       throw AuthException('Patient accounts sign in through the MyPulse360 mobile app.');
@@ -91,7 +91,7 @@ class MockAuthDataSource implements AuthDataSource {
   }) async {
     await simulateLatency();
     if (role == UserRole.patient) {
-      throw AuthException('Staff accounts must be Doctor or Pharmacist.');
+      throw AuthException('Staff accounts must be Doctor or Clinic Assistant.');
     }
     final normalized = email.trim().toLowerCase();
     final exists = _db.users.any((u) => u.email.toLowerCase() == normalized);
