@@ -44,7 +44,8 @@ class ApplyLeavePage extends ConsumerWidget {
     if (user == null) return const SizedBox.shrink();
 
     final today = DateTime.now();
-    final leave = ref.watch(staffLeaveRequestsProvider(user.id));
+    final leave =
+        ref.watch(staffLeaveRequestsProvider(user.id)).valueOrNull ?? const [];
     final upcoming = leave.where((l) => !l.endDate.isBefore(DateTime(today.year, today.month, today.day))).toList()
       ..sort((a, b) => a.startDate.compareTo(b.startDate));
     final past = leave.where((l) => l.endDate.isBefore(DateTime(today.year, today.month, today.day))).toList();

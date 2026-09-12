@@ -56,71 +56,57 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: RoutePaths.splash,
     refreshListenable: refresh,
     redirect: (context, state) {
-      final loc = state.matchedLocation;
       final authState = ref.read(authControllerProvider);
 
-      // A session restore is in flight. Hold on the splash screen rather than
-      // flashing the login page at someone who is already signed in.
-      if (authState is AuthLoading) {
-        // Only a launch-time session restore should pin the user to splash.
-        // login/signUp/changePassword also set AuthLoading, and redirecting
-        // away from those pages mid-submit disposes them — their `!mounted`
-        // guards then swallow the rest of the handler and their error
-        // listeners die before the error ever arrives.
-        const inFlightOk = {
-          RoutePaths.splash,
-          RoutePaths.login,
-          RoutePaths.signUp,
-          RoutePaths.forcePasswordChange,
-        };
-        if (inFlightOk.contains(loc)) return null;
+      // Authentication is still being restored.
+      if (authState is AuthInitial || authState is AuthLoading) {
         return RoutePaths.splash;
       }
 
-      if (loc == RoutePaths.splash) return null;
-
-      final isAuthRoute = loc == RoutePaths.login || loc == RoutePaths.signUp;
-
+      // User is not authenticated.
       if (authState is! AuthAuthenticated) {
-        return isAuthRoute ? null : RoutePaths.login;
+        if (state.matchedLocation == RoutePaths.login) {
+          return null;
+        }
+
+        return RoutePaths.login;
       }
 
       final user = authState.user;
-      if (user.mustChangePassword) {
-        return loc == RoutePaths.forcePasswordChange
-            ? null
-            : RoutePaths.forcePasswordChange;
+
+      // Only patients need the patient-profile onboarding check.
+      if (user.role == UserRole.patient) {
+        final profileAsync = ref.read(patientProfileProvider(user.id));
+
+        // Profile is still being fetched.
+        if (profileAsync.isLoading) {
+          return null;
+        }
+
+        // IMPORTANT:
+        // A failed profile fetch is NOT the same as "no profile".
+        // Do not redirect an authenticated patient to onboarding.
+        if (profileAsync.hasError) {
+          return null;
+        }
+
+        final profile = profileAsync.valueOrNull;
+
+        // Profile doesn't exist -> patient hasn't completed onboarding.
+        if (profile == null) {
+          if (state.matchedLocation == RoutePaths.onboardingWelcome) {
+            return null;
+          }
+
+          return RoutePaths.onboardingWelcome;
+        }
+
+        // Patient has a profile, so don't send them back to onboarding.
+        if (state.matchedLocation == RoutePaths.onboardingWelcome) {
+          return RoutePaths.home;
+        }
       }
 
-      // Don't answer the onboarding question until the answer has arrived.
-      // A profile that is still loading — or one whose fetch failed — is not
-      // "not onboarded"; treating either as false is what pinned real
-      // patients to the welcome screen before. Loading and failed are both
-      // "unknown", and only a settled value may decide this. On failure,
-      // splash_page.dart already routes to login and login_page.dart shows
-      // the error, so the router just needs to stay out of their way.
-      final profileAsync = ref.read(patientProfileProvider(user.id));
-      if (user.role == UserRole.patient && !profileAsync.hasValue) {
-        return null;
-      }
-
-      // "Onboarded" just means a profile row exists, which now happens
-      // immediately after signup (before step 1) so the 5-step flow has
-      // somewhere to save data as it goes — it is not a signal that the
-      // flow is *finished*. Don't bounce mid-flow routes to the dashboard
-      // just because a profile exists; only auth routes and the forced
-      // password-change gate should ever redirect to the dashboard root.
-      final onboarded =
-          user.role != UserRole.patient || profileAsync.valueOrNull != null;
-      if (!onboarded) {
-        return loc == RoutePaths.onboardingWelcome
-            ? null
-            : RoutePaths.onboardingWelcome;
-      }
-
-      if (isAuthRoute || loc == RoutePaths.forcePasswordChange) {
-        return kRoleNavConfig[user.role]!.rootPath;
-      }
       return null;
     },
     routes: [
@@ -287,7 +273,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           navigationShell: shell,
           items: kRoleNavConfig[UserRole.pharmacist]!.items,
           accentColor: context.colors.clinicianAccent,
+<<<<<<< HEAD
           userName: ref.read(currentUserProvider)?.fullName ?? 'Clinic Assistant',
+=======
+          userName:
+              ref.read(currentUserProvider)?.fullName ?? 'Clinic Assistant',
+>>>>>>> fb694254e07ac3ead8b5f5268084efda0f42a2fe
           roleLabel: 'Clinic Assistant',
           avatarUrl: ref.read(currentUserProvider)?.avatarUrl,
         ),

@@ -44,4 +44,6 @@ abstract final class RoutePaths {
   static String createPrescription(String consultationId) => '/pharmacist/create-prescription/$consultationId';
 
   const RoutePaths._();
+
+  static String? get home => null;
 }

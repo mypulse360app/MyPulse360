@@ -128,6 +128,20 @@ class MockAuthDataSource implements AuthDataSource {
   }
 
   @override
+  Future<AppUser> updateEmail({required String newEmail, String? userId}) async {
+    await simulateLatency();
+    final normalized = newEmail.trim().toLowerCase();
+    final exists = _db.users.any((u) => u.email.toLowerCase() == normalized);
+    if (exists) throw AuthException('That email is already in use.');
+
+    final i = _db.users.indexWhere((u) => u.id == userId);
+    if (i == -1) throw AuthException('Account not found.');
+
+    _db.users[i] = _db.users[i].copyWith(email: newEmail.trim());
+    return _db.users[i];
+  }
+
+  @override
   Future<List<AppUser>> getStaffAccounts() async =>
       _db.users.where((u) => u.role != UserRole.patient).toList();
 

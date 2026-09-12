@@ -317,7 +317,11 @@ class _QueueStatusViewState extends ConsumerState<QueueStatusView> {
                         begin: const Offset(0.94, 0.94),
                         curve: Curves.easeOutBack,
                       ),
+<<<<<<< HEAD
                   if (tempCard != null) tempCard,
+=======
+                  ?tempCard,
+>>>>>>> fb694254e07ac3ead8b5f5268084efda0f42a2fe
                   if (!widget.compact && !isDone) ...[
                     const SizedBox(height: 14),
                     Container(

@@ -16,6 +16,10 @@ import '../providers/patient_providers.dart';
 import '../widgets/danger_zone_section.dart';
 import '../widgets/edit_health_profile_sheet.dart';
 import '../widgets/profile_settings_section.dart';
+<<<<<<< HEAD
+=======
+import '../widgets/wellness_goals_section.dart';
+>>>>>>> fb694254e07ac3ead8b5f5268084efda0f42a2fe
 import 'account_deletion_page.dart';
 
 /// P9 — Profile: grouped rows, toggles, danger zone.
@@ -57,6 +61,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final user = ref.watch(currentUserProvider);
     if (user == null) return const SizedBox.shrink();
     final profile = ref.watch(patientProfileProvider(user.id)).valueOrNull;
+    final goals =
+        ref.watch(wellnessGoalsProvider(user.id)).valueOrNull ?? const [];
     final themeMode = ref.watch(themeModeProvider);
 
     return Scaffold(
@@ -164,6 +170,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
               ],
             ),
+            const SizedBox(height: 20),
+            WellnessGoalsSection(patientId: user.id, goals: goals),
             const SizedBox(height: 20),
           ],
           ProfileSettingsSection(

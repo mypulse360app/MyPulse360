@@ -67,15 +67,22 @@ class MockPharmacistDataSource implements PharmacistDataSource {
       }
     }
     
+<<<<<<< HEAD
     if (existing == null) {
       existing = Consultation(
+=======
+    existing ??= Consultation(
+>>>>>>> fb694254e07ac3ead8b5f5268084efda0f42a2fe
         id: generateId(),
         appointmentId: appointmentId,
         patientId: patientId,
         doctorId: doctorId,
         status: ConsultationStatus.inProgress,
       );
+<<<<<<< HEAD
     }
+=======
+>>>>>>> fb694254e07ac3ead8b5f5268084efda0f42a2fe
     
     final updatedVitals = (existing.vitals).copyWith(
       temperatureCelsius: temperature,

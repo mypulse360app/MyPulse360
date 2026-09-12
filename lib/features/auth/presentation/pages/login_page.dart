@@ -29,6 +29,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   void initState() {
     super.initState();
+<<<<<<< HEAD
+=======
+    // The settings box is opened at app startup in main(); in tests (and on
+    // any storage hiccup where it isn't ready) the remembered email simply
+    // isn't available — never crash the login screen over it.
+    if (!Hive.isBoxOpen(HiveBoxes.settings)) return;
+>>>>>>> fb694254e07ac3ead8b5f5268084efda0f42a2fe
     final box = Hive.box(HiveBoxes.settings);
     final savedEmail = box.get(HiveBoxes.keySavedEmail) as String?;
     if (savedEmail != null && savedEmail.isNotEmpty) {
@@ -45,11 +52,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _submit() async {
+<<<<<<< HEAD
     final box = Hive.box(HiveBoxes.settings);
     if (_rememberMe) {
       box.put(HiveBoxes.keySavedEmail, _emailController.text.trim());
     } else {
       box.delete(HiveBoxes.keySavedEmail);
+=======
+    if (Hive.isBoxOpen(HiveBoxes.settings)) {
+      final box = Hive.box(HiveBoxes.settings);
+      if (_rememberMe) {
+        box.put(HiveBoxes.keySavedEmail, _emailController.text.trim());
+      } else {
+        box.delete(HiveBoxes.keySavedEmail);
+      }
+>>>>>>> fb694254e07ac3ead8b5f5268084efda0f42a2fe
     }
 
     await ref
