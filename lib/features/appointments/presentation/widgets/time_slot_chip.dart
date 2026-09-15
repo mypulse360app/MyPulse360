@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../../../config/theme/app_theme.dart';
 import '../../../../shared/utils/date_formatters.dart';
@@ -23,11 +23,7 @@ class TimeSlotChip extends StatelessWidget {
     
     // Style matching the light-theme UI reference image, adapted for dark mode
     if (selected) {
-<<<<<<< HEAD
-      bg = colors.patientAccent.withOpacity(0.1);
-=======
       bg = colors.patientAccent.withValues(alpha: 0.1);
->>>>>>> fb694254e07ac3ead8b5f5268084efda0f42a2fe
       fg = colors.patientAccent; // Blue/Accent
       border = colors.patientAccent;
     } else if (disabled) {

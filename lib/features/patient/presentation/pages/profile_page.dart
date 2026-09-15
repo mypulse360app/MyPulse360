@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -16,10 +16,7 @@ import '../providers/patient_providers.dart';
 import '../widgets/danger_zone_section.dart';
 import '../widgets/edit_health_profile_sheet.dart';
 import '../widgets/profile_settings_section.dart';
-<<<<<<< HEAD
-=======
 import '../widgets/wellness_goals_section.dart';
->>>>>>> fb694254e07ac3ead8b5f5268084efda0f42a2fe
 import 'account_deletion_page.dart';
 
 /// P9 — Profile: grouped rows, toggles, danger zone.

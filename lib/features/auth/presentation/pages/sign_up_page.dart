@@ -75,6 +75,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
 
     final authState = ref.watch(authControllerProvider);
     final loading = authState is AuthLoading;
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
 
     ref.listen(authControllerProvider, (prev, next) {
       if (next is AuthError) {
@@ -98,7 +99,29 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
               isValid: _touchedName && _nameError == null && _nameController.text.isNotEmpty,
               onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 32),
+            if (authState is AuthError) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colors.danger.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: colors.danger, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        authState.message,
+                        style: TextStyle(color: colors.danger, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
             AppTextField(
               label: 'Email',
               controller: _emailController,

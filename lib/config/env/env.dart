@@ -5,8 +5,7 @@
 /// [MockDatabase] instead — which is what the widget tests and a
 /// no-network demo need.
 abstract final class Env {
-  static const bool isMockMode =
-      bool.fromEnvironment('MYPULSE_MOCK', defaultValue: false);
+  static const bool isMockMode = false;
 
   const Env._();
 }

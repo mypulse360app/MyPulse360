@@ -29,13 +29,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   void initState() {
     super.initState();
-<<<<<<< HEAD
-=======
     // The settings box is opened at app startup in main(); in tests (and on
     // any storage hiccup where it isn't ready) the remembered email simply
     // isn't available — never crash the login screen over it.
     if (!Hive.isBoxOpen(HiveBoxes.settings)) return;
->>>>>>> fb694254e07ac3ead8b5f5268084efda0f42a2fe
     final box = Hive.box(HiveBoxes.settings);
     final savedEmail = box.get(HiveBoxes.keySavedEmail) as String?;
     if (savedEmail != null && savedEmail.isNotEmpty) {
@@ -52,13 +49,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _submit() async {
-<<<<<<< HEAD
-    final box = Hive.box(HiveBoxes.settings);
-    if (_rememberMe) {
-      box.put(HiveBoxes.keySavedEmail, _emailController.text.trim());
-    } else {
-      box.delete(HiveBoxes.keySavedEmail);
-=======
     if (Hive.isBoxOpen(HiveBoxes.settings)) {
       final box = Hive.box(HiveBoxes.settings);
       if (_rememberMe) {
@@ -66,7 +56,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       } else {
         box.delete(HiveBoxes.keySavedEmail);
       }
->>>>>>> fb694254e07ac3ead8b5f5268084efda0f42a2fe
     }
 
     await ref
@@ -79,8 +68,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _handlePostAuth() async {
+    if (!mounted) return;
     final state = ref.read(authControllerProvider);
-    if (state is! AuthAuthenticated || !mounted) return;
+    if (state is! AuthAuthenticated) return;
     final user = state.user;
     if (user.mustChangePassword) {
       context.go(RoutePaths.forcePasswordChange);
@@ -187,6 +177,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: 40),
+                  if (authState is AuthError) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colors.danger.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline, color: colors.danger, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              authState.message,
+                              style: TextStyle(color: colors.danger, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                   AppTextField(
                     label: 'Email',
                     controller: _emailController,

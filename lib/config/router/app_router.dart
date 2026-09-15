@@ -65,7 +65,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // User is not authenticated.
       if (authState is! AuthAuthenticated) {
-        if (state.matchedLocation == RoutePaths.login) {
+        final path = state.uri.path;
+        if (path == RoutePaths.login || path == RoutePaths.signUp) {
           return null;
         }
 
@@ -273,12 +274,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           navigationShell: shell,
           items: kRoleNavConfig[UserRole.pharmacist]!.items,
           accentColor: context.colors.clinicianAccent,
-<<<<<<< HEAD
-          userName: ref.read(currentUserProvider)?.fullName ?? 'Clinic Assistant',
-=======
           userName:
               ref.read(currentUserProvider)?.fullName ?? 'Clinic Assistant',
->>>>>>> fb694254e07ac3ead8b5f5268084efda0f42a2fe
           roleLabel: 'Clinic Assistant',
           avatarUrl: ref.read(currentUserProvider)?.avatarUrl,
         ),

@@ -1,4 +1,4 @@
-import '../../../../shared/mock/mock_database.dart';
+﻿import '../../../../shared/mock/mock_database.dart';
 import '../../../../shared/utils/id_generator.dart';
 import '../../../appointments/domain/entities/appointment.dart';
 import '../../../doctor/domain/entities/consultation.dart';
@@ -67,22 +67,13 @@ class MockPharmacistDataSource implements PharmacistDataSource {
       }
     }
     
-<<<<<<< HEAD
-    if (existing == null) {
-      existing = Consultation(
-=======
     existing ??= Consultation(
->>>>>>> fb694254e07ac3ead8b5f5268084efda0f42a2fe
         id: generateId(),
         appointmentId: appointmentId,
         patientId: patientId,
         doctorId: doctorId,
         status: ConsultationStatus.inProgress,
       );
-<<<<<<< HEAD
-    }
-=======
->>>>>>> fb694254e07ac3ead8b5f5268084efda0f42a2fe
     
     final updatedVitals = (existing.vitals).copyWith(
       temperatureCelsius: temperature,
