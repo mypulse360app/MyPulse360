@@ -10,6 +10,7 @@ import '../../../../shared/presentation/widgets/async_section.dart';
 import '../../../../shared/presentation/widgets/section_header.dart';
 import '../../../../shared/utils/date_formatters.dart';
 import '../../../appointments/presentation/pages/book_appointment_page.dart';
+import '../../../appointments/domain/entities/appointment.dart';
 import '../../../appointments/presentation/pages/reschedule_page.dart';
 import '../../../appointments/presentation/providers/appointments_providers.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
@@ -38,9 +39,10 @@ class DashboardPage extends ConsumerWidget {
     final nextAppointment = ref
         .watch(nextUpcomingAppointmentProvider(user.id))
         .valueOrNull;
+    final availableDoctors = ref.watch(availableDoctorsProvider).valueOrNull ?? [];
     final doctor = nextAppointment == null
         ? null
-        : ref.watch(userProfileProvider(nextAppointment.doctorId)).valueOrNull;
+        : availableDoctors.where((d) => d.id == nextAppointment.doctorId).firstOrNull;
     final now = DateTime.now();
     final greeting = now.hour < 12
         ? 'Good morning'
@@ -91,9 +93,11 @@ class DashboardPage extends ConsumerWidget {
               ].animate().fadeIn(duration: 600.ms, curve: AppleSpringCurve()).slideY(begin: 0.2),
             ),
             const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
                   child: _HeroActionCard(
                     emoji: '📅',
                     title: 'Book\nAppointments',
@@ -117,6 +121,7 @@ class DashboardPage extends ConsumerWidget {
                   ),
                 ),
               ].animate(interval: 50.ms).fadeIn(duration: 600.ms, curve: AppleSpringCurve()).slideY(begin: 0.1),
+              ),
             ),
             AsyncSection(
               value: profileAsync,
@@ -129,28 +134,88 @@ class DashboardPage extends ConsumerWidget {
                     QueueStatusView(
                       compact: true,
                       onTap: () => context.go(RoutePaths.patientAppointments),
-                    ),
-                    if (nextAppointment != null) ...[
-                      const SizedBox(height: 20),
-                      NextAppointmentBanner(
-                        appointment: nextAppointment,
-                        doctorName: doctor?.fullName ?? 'Your doctor',
-                        onViewDetails: () => context.push(
-                          RoutePaths.appointmentDetail(nextAppointment.id),
-                        ),
-                        onReschedule: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                ReschedulePage(appointment: nextAppointment),
+                      fallback: nextAppointment != null ? Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: NextAppointmentBanner(
+                          appointment: nextAppointment,
+                          doctorName: doctor?.fullName ?? 'Your doctor',
+                          onViewDetails: () => context.push(
+                            RoutePaths.appointmentDetail(nextAppointment.id),
+                          ),
+                          onReschedule: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ReschedulePage(appointment: nextAppointment),
+                            ),
                           ),
                         ),
+                      ) : null,
+                    ),
+                    // If QueueStatusView isn't falling back to NextAppointmentBanner
+                    // (i.e. they do have a visit today), we still want to show the
+                    // next appointment below it.
+                    if (nextAppointment != null)
+                      Consumer(
+                        builder: (context, ref, child) {
+                          // Check if they actually have a visit today
+                          final appointmentsAsync = ref.watch(patientAppointmentsProvider(user.id));
+                          final hasVisitToday = appointmentsAsync.maybeWhen(
+                            data: (appointments) => appointments.any(
+                              (a) {
+                                final now = DateTime.now();
+                                return a.scheduledAt.year == now.year &&
+                                       a.scheduledAt.month == now.month &&
+                                       a.scheduledAt.day == now.day &&
+                                       a.status != AppointmentStatus.cancelled;
+                              }
+                            ),
+                            orElse: () => false,
+                          );
+
+                          if (hasVisitToday) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 20),
+                              child: NextAppointmentBanner(
+                                appointment: nextAppointment,
+                                doctorName: doctor?.fullName ?? 'Your doctor',
+                                onViewDetails: () => context.push(
+                                  RoutePaths.appointmentDetail(nextAppointment.id),
+                                ),
+                                onReschedule: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => ReschedulePage(appointment: nextAppointment),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
                       ),
-                    ],
                   ],
                 );
               },
             ),
 
+            const SizedBox(height: 24),
+            Text(
+              'Today\'s Reminders',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colors.border),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Medication reminders will appear here once you add prescriptions.',
+                  style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
             SectionHeader(
               title: 'Your Goals This Week',
@@ -181,27 +246,6 @@ class DashboardPage extends ConsumerWidget {
                       ],
                     ),
             ),
-            const SizedBox(height: 20),
-
-            Text(
-              'Today\'s Reminders',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 10),
-            Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: colors.border),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Medication reminders will appear here once you add prescriptions.',
-                  style: TextStyle(fontSize: 12, color: colors.textSecondary),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -229,7 +273,6 @@ class _HeroActionCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 170,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(32),

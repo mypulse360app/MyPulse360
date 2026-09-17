@@ -1,4 +1,4 @@
-﻿import '../../../../shared/mock/mock_database.dart';
+import '../../../../shared/mock/mock_database.dart';
 import '../../../../shared/utils/id_generator.dart';
 import '../../../../shared/utils/mock_latency.dart';
 import '../../../prescriptions/domain/entities/prescription.dart';
@@ -65,7 +65,7 @@ class MockChatbotDataSource implements ChatbotDataSource {
 
     await simulateLatency();
 
-    final reply = _replyFor(patientId, text, DateTime.now());
+    final reply = _replyFor(patientId, conversationId, text, DateTime.now());
     final refreshed = _find(conversationId);
     _replaceConversation(
       refreshed.copyWith(messages: [...refreshed.messages, reply], updatedAt: reply.timestamp),
@@ -73,7 +73,7 @@ class MockChatbotDataSource implements ChatbotDataSource {
     return reply;
   }
 
-  ChatMessage _replyFor(String patientId, String text, DateTime now) {
+  ChatMessage _replyFor(String patientId, String conversationId, String text, DateTime now) {
     final upcoming = _db.appointments
         .where((a) => a.patientId == patientId && a.scheduledAt.isAfter(DateTime.now()))
         .toList()
@@ -85,8 +85,11 @@ class MockChatbotDataSource implements ChatbotDataSource {
         .expand((p) => p.items.map((i) => '${i.medicationName} ${i.strength}'))
         .toList();
 
+    final refreshed = _find(conversationId);
+    final history = refreshed.messages;
+
     final generated = generateChatReply(
-      text: text,
+      history: history,
       upcomingAppointments: [
         for (final a in upcoming)
           AppointmentContext(
@@ -104,6 +107,8 @@ class MockChatbotDataSource implements ChatbotDataSource {
       timestamp: now,
       quickReplies: generated.quickReplies,
       actionType: generated.actionType,
+      bookingDoctorId: generated.bookingDoctorId,
+      bookingDateTime: generated.bookingDateTime,
     );
   }
 

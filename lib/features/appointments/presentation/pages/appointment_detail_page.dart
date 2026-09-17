@@ -26,6 +26,7 @@ class AppointmentDetailPage extends ConsumerWidget {
   final String appointmentId;
 
   StatusTone _tone(AppointmentStatus status) => switch (status) {
+    AppointmentStatus.pending => StatusTone.neutral,
     AppointmentStatus.confirmed => StatusTone.success,
     AppointmentStatus.completed => StatusTone.info,
     AppointmentStatus.cancelled => StatusTone.danger,
@@ -52,9 +53,8 @@ class AppointmentDetailPage extends ConsumerWidget {
             return const Center(child: Text('Appointment not found'));
           }
           final appointment = matches.first;
-          final doctor = ref
-              .watch(userProfileProvider(appointment.doctorId))
-              .valueOrNull;
+          final availableDoctors = ref.watch(availableDoctorsProvider).valueOrNull ?? [];
+          final doctor = availableDoctors.where((d) => d.id == appointment.doctorId).firstOrNull;
           final doctorProfile = ref.watch(
             doctorProfileProvider(appointment.doctorId),
           );

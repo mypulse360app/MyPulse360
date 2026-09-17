@@ -16,6 +16,7 @@ import '../providers/pharmacist_providers.dart';
 import '../widgets/add_patient_dialog.dart';
 import '../widgets/pharmacy_queue_tile.dart';
 import '../widgets/temperature_input_dialog.dart';
+import '../../../appointments/presentation/providers/appointments_providers.dart';
 
 /// F1 — Pharmacist Dashboard: queue ordered by wait, amber past 30 min.
 class PharmacistDashboardPage extends ConsumerWidget {
@@ -60,7 +61,21 @@ class PharmacistDashboardPage extends ConsumerWidget {
             ),
             const SizedBox(height: 2),
             Text(DateFormatters.full(DateTime.now()), style: TextStyle(fontSize: 12, color: colors.textSecondary)),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            Consumer(
+              builder: (context, ref, child) {
+                final isClosed = ref.watch(clinicClosedProvider);
+                return SwitchListTile(
+                  title: const Text('Clinic is Closed'),
+                  subtitle: Text(isClosed ? 'The clinic is currently marked as closed.' : 'The clinic is currently open.'),
+                  value: isClosed,
+                  onChanged: (val) => ref.read(clinicClosedProvider.notifier).state = val,
+                  activeThumbColor: colors.danger,
+                  contentPadding: EdgeInsets.zero,
+                );
+              },
+            ),
+            const SizedBox(height: 8),
             
             Text('Today\'s Appointments', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),

@@ -23,6 +23,7 @@ UserRole userRoleFromDb(String label) {
 }
 
 const _appointmentStatusToDb = <AppointmentStatus, String>{
+  AppointmentStatus.pending: 'pending',
   AppointmentStatus.scheduled: 'scheduled',
   AppointmentStatus.confirmed: 'confirmed',
   AppointmentStatus.inProgress: 'in_progress',

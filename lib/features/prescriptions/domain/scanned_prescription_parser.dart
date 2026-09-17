@@ -104,13 +104,30 @@ ScannedPrescriptionPayload buildFallbackScannedPayload(String raw) {
   final trimmed = raw.trim();
   final looksReadable = RegExp(r'[A-Za-z]{2,}').hasMatch(trimmed);
   final now = DateTime.now();
+
+  // Mock a tiny product database for common numeric barcodes
+  String resolvedName = '';
+  if (looksReadable) {
+    resolvedName = _truncate(trimmed, 60);
+  } else if (RegExp(r'^\d+$').hasMatch(trimmed)) {
+    // If it's a numeric barcode, check our mock lookup or fallback to the number
+    final mockDatabase = {
+      '9556111166661': 'Paracetamol 500mg',
+      '8901138300057': 'Amoxicillin 250mg',
+      '8999999123456': 'Ibuprofen 400mg',
+      '300882103405': 'Zyrtec Allergy (Cetirizine 10mg)',
+      '123456789012': 'Lisinopril 10mg',
+    };
+    resolvedName = mockDatabase[trimmed] ?? 'Unknown Medication (UPC: $trimmed)';
+  }
+
   return ScannedPrescriptionPayload(
     issuedDate: now,
     expiryDate: now.add(const Duration(days: 30)),
     medications: [
       PrescriptionItem(
         id: 'scanned-item-0',
-        medicationName: looksReadable ? _truncate(trimmed, 60) : '',
+        medicationName: resolvedName,
         strength: '',
         form: 'tablet',
         quantity: 1,

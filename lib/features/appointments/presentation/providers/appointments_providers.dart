@@ -92,3 +92,5 @@ final availableDoctorsProvider = FutureProvider<List<AppUser>>((ref) async {
     );
   }).toList();
 });
+
+final clinicClosedProvider = StateProvider<bool>((ref) => false);

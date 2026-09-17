@@ -39,10 +39,10 @@ class AsyncSection<T> extends StatelessWidget {
               size: 32,
             ),
             const SizedBox(height: 12),
-            Text(
-              '$error',
+            const Text(
+              'We had trouble connecting to the server. Please pull to refresh or try again later.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: colors.textSecondary, fontSize: 13),
+              style: TextStyle(color: Colors.white70, fontSize: 13),
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 16),

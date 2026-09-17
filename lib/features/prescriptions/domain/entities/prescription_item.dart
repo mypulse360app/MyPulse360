@@ -12,6 +12,8 @@ class PrescriptionItem extends Equatable {
     required this.durationDays,
     required this.instructions,
     this.refillsAllowed = 0,
+    this.packagingType = 'box',
+    this.unitQuantity = 1,
   });
 
   final String id;
@@ -24,6 +26,8 @@ class PrescriptionItem extends Equatable {
   final int durationDays;
   final String instructions;
   final int refillsAllowed;
+  final String packagingType;
+  final int unitQuantity;
 
   @override
   List<Object?> get props => [
@@ -37,5 +41,7 @@ class PrescriptionItem extends Equatable {
         durationDays,
         instructions,
         refillsAllowed,
+        packagingType,
+        unitQuantity,
       ];
 }

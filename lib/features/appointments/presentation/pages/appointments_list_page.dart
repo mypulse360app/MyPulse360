@@ -187,9 +187,8 @@ class _AppointmentTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final doctor = ref
-        .watch(userProfileProvider(appointment.doctorId))
-        .valueOrNull;
+    final availableDoctors = ref.watch(availableDoctorsProvider).valueOrNull ?? [];
+    final doctor = availableDoctors.where((d) => d.id == appointment.doctorId).firstOrNull;
     return AppointmentCard(
       appointment: appointment,
       doctorName: doctor?.fullName ?? 'Doctor',

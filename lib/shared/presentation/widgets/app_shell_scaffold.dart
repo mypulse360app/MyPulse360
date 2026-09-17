@@ -49,35 +49,37 @@ class AppShellScaffold extends StatefulWidget {
 }
 
 class _AppShellScaffoldState extends State<AppShellScaffold> {
-  bool _isSidebarExpanded = false;
+  bool _isSidebarExpanded = true;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final accent = widget.accentColor ?? colors.patientAccent;
-    final isDesktop = MediaQuery.of(context).size.width >= 800;
+    final isDesktop = MediaQuery.of(context).orientation == Orientation.landscape;
 
     if (isDesktop) {
       return Scaffold(
         body: Container(
           // Background color to contrast with the glass sidebar
           color: Theme.of(context).scaffoldBackgroundColor,
-          child: Row(
-            children: [
-              _buildSidebar(context, accent),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(32),
-                    bottomLeft: Radius.circular(32),
-                  ),
-                  child: Container(
-                    color: Theme.of(context).cardTheme.color ?? Colors.white,
-                    child: widget.navigationShell,
+          child: SafeArea(
+            child: Row(
+              children: [
+                _buildSidebar(context, accent),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(32),
+                      bottomLeft: Radius.circular(32),
+                    ),
+                    child: Container(
+                      color: Theme.of(context).cardTheme.color ?? Colors.white,
+                      child: widget.navigationShell,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
@@ -141,15 +143,20 @@ class _AppShellScaffoldState extends State<AppShellScaffold> {
   }
 
   Widget _buildSidebar(BuildContext context, Color accent) {
+    final isSmallHeight = MediaQuery.of(context).size.height < 600;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
+      padding: EdgeInsets.symmetric(
+        vertical: isSmallHeight ? 12.0 : 24.0, 
+        horizontal: 12.0,
+      ),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
         width: _isSidebarExpanded ? 220 : 80,
         decoration: BoxDecoration(
           color: accent.withValues(alpha: 0.15), // Glass effect background
-          borderRadius: BorderRadius.circular(40),
+          borderRadius: BorderRadius.circular(32),
           border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
@@ -160,75 +167,63 @@ class _AppShellScaffoldState extends State<AppShellScaffold> {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(40),
+          borderRadius: BorderRadius.circular(32),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Column(
-              children: [
-                const SizedBox(height: 32),
-                // Logo & Collapse button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    mainAxisAlignment: _isSidebarExpanded ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
+            child: CustomScrollView(
+              slivers: [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: isSmallHeight ? 8.0 : 24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Collapse/Expand button
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Align(
+                            alignment: _isSidebarExpanded ? Alignment.centerRight : Alignment.center,
+                            child: IconButton(
+                              icon: Icon(
+                                _isSidebarExpanded ? Icons.chevron_left : Icons.menu,
+                                color: Colors.white,
+                              ),
+                              onPressed: () => setState(() => _isSidebarExpanded = !_isSidebarExpanded),
+                            ),
+                          ),
                         ),
-                        child: const Icon(Icons.eco, color: Colors.white, size: 24),
-                      ),
-                      if (_isSidebarExpanded)
-                        IconButton(
-                          icon: const Icon(Icons.chevron_left, color: Colors.white),
-                          onPressed: () => setState(() => _isSidebarExpanded = false),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-                // Expanded expand button if collapsed
-                if (!_isSidebarExpanded)
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right, color: Colors.white),
-                    onPressed: () => setState(() => _isSidebarExpanded = true),
-                  ),
-                if (!_isSidebarExpanded) const SizedBox(height: 16),
-                // Navigation Items
-                Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: widget.items.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final item = widget.items[index];
-                      final isSelected = index == widget.navigationShell.currentIndex;
-                      return _SidebarItem(
-                        item: item,
-                        isSelected: isSelected,
-                        isExpanded: _isSidebarExpanded,
-                        onTap: () => widget.navigationShell.goBranch(
-                          index,
-                          initialLocation: index == widget.navigationShell.currentIndex,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                // Optional center action for web
-                if (widget.centerActionIcon != null) ...[
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: FloatingActionButton(
-                      elevation: 0,
-                      backgroundColor: Colors.white.withValues(alpha: 0.2),
-                      onPressed: widget.centerActionOnTap,
-                      child: Icon(widget.centerActionIcon, color: Colors.white),
+                        // Navigation Items
+                        for (var i = 0; i < widget.items.length; i++)
+                          _SidebarItem(
+                            item: widget.items[i],
+                            isSelected: i == widget.navigationShell.currentIndex,
+                            isExpanded: _isSidebarExpanded,
+                            isSmallHeight: isSmallHeight,
+                            onTap: () => widget.navigationShell.goBranch(
+                              i,
+                              initialLocation: i == widget.navigationShell.currentIndex,
+                            ),
+                          ),
+                        // Optional center action for web
+                        if (widget.centerActionIcon != null)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: FloatingActionButton(
+                                elevation: 0,
+                                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                                onPressed: widget.centerActionOnTap,
+                                child: Icon(widget.centerActionIcon, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ],
             ),
           ),
@@ -243,12 +238,14 @@ class _SidebarItem extends StatelessWidget {
     required this.item,
     required this.isSelected,
     required this.isExpanded,
+    required this.isSmallHeight,
     required this.onTap,
   });
 
   final NavItem item;
   final bool isSelected;
   final bool isExpanded;
+  final bool isSmallHeight;
   final VoidCallback onTap;
 
   @override
@@ -262,24 +259,26 @@ class _SidebarItem extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: isSmallHeight ? 8 : 12),
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(32),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
-            children: [
-              Icon(isSelected ? item.selectedIcon : item.icon, color: iconColor, size: 24),
-              if (isExpanded) ...[
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const NeverScrollableScrollPhysics(),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+              children: [
+                Icon(isSelected ? item.selectedIcon : item.icon, color: iconColor, size: 24),
+                if (isExpanded) ...[
+                  const SizedBox(width: 16),
+                  Text(
                     item.label,
                     style: TextStyle(
                       color: textColor,
@@ -289,9 +288,9 @@ class _SidebarItem extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

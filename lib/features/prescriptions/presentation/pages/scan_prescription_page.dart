@@ -43,7 +43,9 @@ class _MedFormControllers {
         durationDays = TextEditingController(text: item.durationDays.toString()),
         instructions = TextEditingController(text: item.instructions),
         form = item.form,
-        refillsAllowed = item.refillsAllowed;
+        refillsAllowed = item.refillsAllowed,
+        packagingType = item.packagingType,
+        unitQuantity = TextEditingController(text: item.unitQuantity.toString());
 
   final TextEditingController name;
   final TextEditingController strength;
@@ -52,8 +54,10 @@ class _MedFormControllers {
   final TextEditingController frequency;
   final TextEditingController durationDays;
   final TextEditingController instructions;
+  final TextEditingController unitQuantity;
   final String form;
   final int refillsAllowed;
+  String packagingType;
 
   void dispose() {
     name.dispose();
@@ -63,6 +67,7 @@ class _MedFormControllers {
     frequency.dispose();
     durationDays.dispose();
     instructions.dispose();
+    unitQuantity.dispose();
   }
 }
 
@@ -76,6 +81,15 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
   String? _validationError;
   bool _saving = false;
   bool _processingPhoto = false;
+  bool _confirmedDetails = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _startScan();
+    });
+  }
 
   @override
   void dispose() {
@@ -92,10 +106,29 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
       title: 'Scan prescription',
       instructions: 'Point the camera at your prescription\'s QR code or barcode',
     );
-    if (code == null || !mounted) return;
+    if (!mounted) return;
+    
+    if (code == null) {
+      if (_payload == null) {
+        Navigator.of(context).pop();
+      }
+      return;
+    }
+
+    if (code == 'PICK_PHOTO') {
+      _takePhoto(fromGallery: true);
+      return;
+    } else if (code == 'STRIP_OCR') {
+      _takePhoto(fromGallery: false); // Use camera for strip OCR
+      return;
+    } else if (code == 'MANUAL') {
+      _applyPayload(buildFallbackScannedPayload(''));
+      return;
+    }
 
     if (code.trim().isEmpty) {
       setState(() => _state = _ScanState.error);
+      if (_payload == null) _startScan(); // Retry if we were on the initial empty screen
       return;
     }
 
@@ -103,14 +136,23 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
     _applyPayload(payload);
   }
 
-  Future<void> _takePhoto() async {
+  Future<void> _takePhoto({bool fromGallery = false}) async {
     XFile? photo;
     try {
-      photo = await ImagePicker().pickImage(source: ImageSource.camera, maxWidth: 2000);
+      photo = await ImagePicker().pickImage(
+        source: fromGallery ? ImageSource.gallery : ImageSource.camera, 
+        maxWidth: 2000,
+      );
     } catch (_) {
       photo = null;
     }
-    if (photo == null || !mounted) return;
+    if (!mounted) return;
+    if (photo == null) {
+      if (_payload == null) {
+        Navigator.of(context).pop();
+      }
+      return;
+    }
 
     setState(() => _processingPhoto = true);
 
@@ -136,6 +178,7 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
       c.dispose();
     }
     setState(() {
+      _confirmedDetails = false;
       _payload = payload;
       _state = _ScanState.idle;
       _validationError = null;
@@ -178,6 +221,8 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
           durationDays: int.tryParse(c.durationDays.text.trim()) ?? 30,
           instructions: c.instructions.text.trim(),
           refillsAllowed: c.refillsAllowed,
+          packagingType: c.packagingType,
+          unitQuantity: int.tryParse(c.unitQuantity.text.trim()) ?? 1,
         ),
       );
     }
@@ -218,72 +263,17 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
     final payload = _payload;
 
     return Scaffold(
-      appBar: const LargeTitleAppBar(title: 'Scan Prescription'),
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        child: payload != null ? _buildReview(context, colors) : _buildIntro(context, colors),
+      appBar: LargeTitleAppBar(
+        title: 'Scan Prescription',
+        onBack: payload != null ? () {
+          _rescan();
+          _startScan();
+        } : null,
       ),
-    );
-  }
-
-  Widget _buildIntro(BuildContext context, AppSemanticColors colors) {
-    final hasError = _state == _ScanState.error;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 64,
-          height: 64,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: colors.patientAccent.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Icon(Icons.qr_code_scanner_rounded, size: 30, color: colors.patientAccent),
-        ),
-        const SizedBox(height: 16),
-        Text('Digitize a paper prescription', style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 6),
-        Text(
-          "Scan the QR code or barcode on a prescription or medicine box to add it to your list. "
-          "You'll get a chance to review and fill in the details before it's saved.",
-          style: TextStyle(color: colors.textSecondary, fontSize: 13, height: 1.4),
-        ),
-        if (hasError) ...[
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: colors.danger.withValues(alpha: 0.08),
-              border: Border.all(color: colors.danger.withValues(alpha: 0.35)),
-              borderRadius: BorderRadius.circular(AppRadii.card),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.error_outline_rounded, size: 18, color: colors.danger),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    "That code didn't have anything readable on it. Try scanning again.",
-                    style: TextStyle(fontSize: 12.5, color: colors.textPrimary),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-        const Spacer(),
-        PrimaryButton(label: hasError ? 'Try Again' : 'Start Scanning', onPressed: _startScan),
-        const SizedBox(height: 10),
-        OutlinedButton.icon(
-          onPressed: _processingPhoto ? null : _takePhoto,
-          icon: _processingPhoto
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Icon(Icons.camera_alt_outlined, size: 18),
-          label: Text(_processingPhoto ? 'Reading photo…' : 'Take a Photo Instead'),
-        ),
-      ],
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+        child: payload != null ? _buildReview(context, colors) : const SizedBox.shrink(),
+      ),
     );
   }
 
@@ -301,6 +291,7 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
         const SizedBox(height: 16),
         Expanded(
           child: ListView(
+            padding: const EdgeInsets.only(bottom: 120),
             children: [
               Container(
                 padding: const EdgeInsets.all(14),
@@ -334,32 +325,49 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
               const SizedBox(height: 14),
               Text('Medications', style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 8),
-              for (final c in _medControllers) ...[
-                _medicationCard(context, colors, c),
-                const SizedBox(height: 8),
+              for (var i = 0; i < _medControllers.length; i++) ...[
+                _medicationCard(context, colors, _medControllers[i], i + 1),
+                const SizedBox(height: 12),
               ],
               if (_validationError != null) ...[
                 const SizedBox(height: 4),
                 Text(_validationError!, style: TextStyle(fontSize: 12, color: colors.danger)),
               ],
+              const SizedBox(height: 16),
+              CheckboxListTile(
+                value: _confirmedDetails,
+                onChanged: (v) => setState(() => _confirmedDetails = v ?? false),
+                title: const Text('I have verified the spelling and details of the medication(s) are correct.', style: TextStyle(fontSize: 12)),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                activeColor: colors.patientAccent,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _saving ? null : () {
+                        _rescan();
+                        _startScan();
+                      },
+                      child: const Text('Rescan'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: PrimaryButton(
+                      label: 'Save', 
+                      onPressed: (!_confirmedDetails || _saving) ? null : _save, 
+                      loading: _saving
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _saving ? null : _rescan,
-                child: const Text('Rescan'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 2,
-              child: PrimaryButton(label: 'Save to My Prescriptions', onPressed: _save, loading: _saving),
-            ),
-          ],
         ),
       ],
     );
@@ -403,74 +411,156 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
     );
   }
 
-  Widget _medicationCard(BuildContext context, AppSemanticColors colors, _MedFormControllers c) {
+  Widget _medicationCard(BuildContext context, AppSemanticColors colors, _MedFormControllers c, int index) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(32),
+        gradient: RadialGradient(
+          center: Alignment.topLeft,
+          radius: 2.0,
+          colors: [
+            const Color(0xFF4A3BB1), // Vibrant Purple/Blue
+            const Color(0xFF4A3BB1).withValues(alpha: 0.5),
+            const Color(0xFF101015),
+          ],
+          stops: const [0.0, 0.5, 1.0],
+        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4A3BB1).withValues(alpha: 0.25),
+            blurRadius: 30,
+            spreadRadius: -10,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextField(
-            controller: c.name,
-            style: Theme.of(context).textTheme.titleSmall,
-            decoration: const InputDecoration(labelText: 'Medication name', isDense: true),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'MEDICATION',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.6,
+                  color: Colors.white.withValues(alpha: 0.6),
+                ),
+              ),
+              Text(
+                '#$index',
+                style: const TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -1.5,
+                  color: Colors.white,
+                  height: 1.0,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
+          _darkTextField(c.name, 'Medication name'),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _darkTextField(c.strength, 'Strength')),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _darkDropdown(
+                  value: c.packagingType,
+                  items: const ['box', 'strip', 'bottle', 'sachet', 'tube'],
+                  label: 'Packaging Type',
+                  onChanged: (val) {
+                    if (val != null) setState(() => c.packagingType = val);
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: c.strength,
-                  decoration: const InputDecoration(labelText: 'Strength', isDense: true),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: c.quantity,
+                child: _darkTextField(
+                  c.quantity, 
+                  c.packagingType == 'strip' ? 'Number of strips' : 
+                  c.packagingType == 'box' ? 'Number of boxes' :
+                  c.packagingType == 'bottle' ? 'Number of bottles' :
+                  c.packagingType == 'sachet' ? 'Number of sachets' :
+                  c.packagingType == 'tube' ? 'Number of tubes' : 'Quantity', 
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Quantity', isDense: true),
                 ),
               ),
+              const SizedBox(width: 12),
+              Expanded(child: _darkTextField(c.unitQuantity, 'Units per ${c.packagingType}', keyboardType: TextInputType.number)),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(
-                child: TextField(
-                  controller: c.unit,
-                  decoration: const InputDecoration(labelText: 'Unit', isDense: true),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: c.frequency,
-                  decoration: const InputDecoration(labelText: 'Frequency', isDense: true),
-                ),
-              ),
+              Expanded(child: _darkTextField(c.unit, 'Unit')),
+              const SizedBox(width: 12),
+              Expanded(child: _darkTextField(c.frequency, 'Frequency')),
             ],
           ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: c.durationDays,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Duration (days)', isDense: true),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: c.instructions,
-            minLines: 1,
-            maxLines: 3,
-            decoration: const InputDecoration(labelText: 'Instructions', isDense: true),
-          ),
+          const SizedBox(height: 12),
+          _darkTextField(c.durationDays, 'Duration (days)', keyboardType: TextInputType.number),
+          const SizedBox(height: 12),
+          _darkTextField(c.instructions, 'Instructions', maxLines: 3),
         ],
       ),
+    );
+  }
+
+  Widget _darkTextField(TextEditingController controller, String label, {TextInputType? keyboardType, int? maxLines}) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      minLines: 1,
+      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2))),
+        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+      ),
+    );
+  }
+
+  Widget _darkDropdown({
+    required String value,
+    required List<String> items,
+    required String label,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      dropdownColor: const Color(0xFF101015),
+      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2))),
+        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+      ),
+      items: items
+          .map((item) => DropdownMenuItem(
+                value: item,
+                child: Text(item[0].toUpperCase() + item.substring(1)),
+              ))
+          .toList(),
+      onChanged: onChanged,
     );
   }
 }

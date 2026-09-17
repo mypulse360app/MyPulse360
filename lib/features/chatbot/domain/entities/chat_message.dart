@@ -10,6 +10,8 @@ class ChatMessage extends Equatable {
     required this.timestamp,
     this.quickReplies = const [],
     this.actionType,
+    this.bookingDoctorId,
+    this.bookingDateTime,
   });
 
   final String id;
@@ -18,7 +20,9 @@ class ChatMessage extends Equatable {
   final DateTime timestamp;
   final List<String> quickReplies;
   final String? actionType;
+  final String? bookingDoctorId;
+  final DateTime? bookingDateTime;
 
   @override
-  List<Object?> get props => [id, sender, text, timestamp, quickReplies, actionType];
+  List<Object?> get props => [id, sender, text, timestamp, quickReplies, actionType, bookingDoctorId, bookingDateTime];
 }

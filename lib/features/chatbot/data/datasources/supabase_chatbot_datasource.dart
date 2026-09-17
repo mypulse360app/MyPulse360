@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../../shared/data/db_failure.dart';
 import '../../domain/entities/chat_conversation.dart';
@@ -18,8 +19,7 @@ class SupabaseChatbotDataSource implements ChatbotDataSource {
 
   DateTime _utc(Object? v) => DateTime.parse(v! as String).toUtc();
 
-  ChatSender _sender(String label) =>
-      label == 'user' ? ChatSender.user : ChatSender.assistant;
+
 
   ChatConversation _conversationFromRow(
     Map<String, dynamic> row,
@@ -29,16 +29,20 @@ class SupabaseChatbotDataSource implements ChatbotDataSource {
         id: row['id'] as String,
         patientId: row['patient_id'] as String,
         updatedAt: _utc(row['updated_at']),
-        messages: messageRows.map(_messageFromRow).toList(),
+        messages: messageRows
+            .map((r) => _messageFromRow(r, row['patient_id'] as String))
+            .toList(),
       );
 
-  ChatMessage _messageFromRow(Map<String, dynamic> r) => ChatMessage(
+  ChatMessage _messageFromRow(Map<String, dynamic> r, String patientId) =>
+      ChatMessage(
         id: r['id'] as String,
-        sender: _sender(r['sender'] as String),
-        text: r['body'] as String,
-        timestamp: _utc(r['sent_at']),
-        quickReplies:
-            List<String>.from(r['quick_replies'] as List? ?? const []),
+        sender: (r['sender_id'] as String) == patientId
+            ? ChatSender.user
+            : ChatSender.assistant,
+        text: r['message'] as String,
+        timestamp: _utc(r['created_at']),
+        quickReplies: const [],
       );
 
   Future<ChatConversation> _loadConversation(String id, String patientId) async {
@@ -48,12 +52,12 @@ class SupabaseChatbotDataSource implements ChatbotDataSource {
         .eq('id', id)
         .eq('patient_id', patientId)
         .single();
-    final messages = await _client
+    final messageRows = await _client
         .from('chat_messages')
         .select('*')
         .eq('conversation_id', id)
-        .order('seq');
-    return _conversationFromRow(row, messages);
+        .order('created_at');
+    return _conversationFromRow(row, messageRows);
   }
 
   @override
@@ -70,7 +74,7 @@ class SupabaseChatbotDataSource implements ChatbotDataSource {
           .from('chat_messages')
           .select('*')
           .inFilter('conversation_id', ids)
-          .order('seq');
+          .order('created_at');
       return [
         for (final row in rows)
           _conversationFromRow(
@@ -104,9 +108,10 @@ class SupabaseChatbotDataSource implements ChatbotDataSource {
   @override
   Future<ChatConversation> startNewConversation(String patientId) async {
     try {
+      final newId = const Uuid().v4();
       final row = await _client
           .from('chat_conversations')
-          .insert({'patient_id': patientId})
+          .insert({'id': newId, 'patient_id': patientId})
           .select()
           .single();
       return _conversationFromRow(row, const []);
@@ -122,12 +127,14 @@ class SupabaseChatbotDataSource implements ChatbotDataSource {
     required String text,
   }) async {
     try {
+      final newMsgId = const Uuid().v4();
       await _client
           .from('chat_messages')
           .insert({
+            'id': newMsgId,
             'conversation_id': conversationId,
-            'sender': 'user',
-            'body': text,
+            'sender_id': patientId,
+            'message': text,
           })
           .select()
           .single();
@@ -138,26 +145,37 @@ class SupabaseChatbotDataSource implements ChatbotDataSource {
           .update({'updated_at': DateTime.now().toUtc().toIso8601String()})
           .eq('id', conversationId);
 
-      final reply = await _generateReply(patientId, text);
+      final reply = await _generateReply(patientId, conversationId, text);
 
+      final replyMsgId = const Uuid().v4();
       final replyRow = await _client
           .from('chat_messages')
           .insert({
+            'id': replyMsgId,
             'conversation_id': conversationId,
-            'sender': 'assistant',
-            'body': reply.text,
-            'quick_replies': reply.quickReplies,
+            'sender_id': '22222222-2222-2222-2222-222222222221', // Dr. Ahmed Rashid
+            'message': reply.text,
           })
           .select()
           .single();
 
-      return _messageFromRow(replyRow);
+      final msg = _messageFromRow(replyRow, patientId);
+      return ChatMessage(
+        id: msg.id,
+        sender: msg.sender,
+        text: msg.text,
+        timestamp: msg.timestamp,
+        quickReplies: reply.quickReplies,
+        actionType: reply.actionType,
+        bookingDoctorId: reply.bookingDoctorId,
+        bookingDateTime: reply.bookingDateTime,
+      );
     } catch (e) {
       throw mapPostgrestError(e);
     }
   }
 
-  Future<ChatReply> _generateReply(String patientId, String text) async {
+  Future<ChatReply> _generateReply(String patientId, String conversationId, String text) async {
     final upcomingRows = await _client
         .from('appointments')
         .select('id, doctor_id, scheduled_at')
@@ -202,8 +220,15 @@ class SupabaseChatbotDataSource implements ChatbotDataSource {
       // Absent recent medications shouldn't block the appointment answer.
     }
 
+    final messageRows = await _client
+        .from('chat_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at');
+    final history = messageRows.map((r) => _messageFromRow(r, patientId)).toList();
+
     return generateChatReply(
-      text: text,
+      history: history,
       upcomingAppointments: [
         for (final r in upcomingRows)
           AppointmentContext(

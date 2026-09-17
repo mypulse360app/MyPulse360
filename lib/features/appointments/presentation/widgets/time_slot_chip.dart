@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../../../config/theme/app_theme.dart';
 import '../../../../shared/utils/date_formatters.dart';
@@ -46,21 +46,36 @@ class TimeSlotChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(12), // Match screenshot rounded rect
           border: Border.all(color: border, width: selected ? 1.5 : 1.0),
         ),
-        child: Row(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (selected) ...[
-              Icon(Icons.check, size: 16, color: fg),
-              const SizedBox(width: 4),
-            ],
-            Text(
-              DateFormatters.time(slot.dateTime),
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-                color: fg,
-                decoration: slot.isBooked ? TextDecoration.lineThrough : null,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (selected) ...[
+                  Icon(Icons.check, size: 16, color: fg),
+                  const SizedBox(width: 4),
+                ],
+                Text(
+                  DateFormatters.time(slot.dateTime),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                    color: fg,
+                    decoration: slot.isBooked ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: slot.isBooked ? colors.danger : (slot.isDisabled ? colors.textTertiary : colors.success),
+                shape: BoxShape.circle,
               ),
             ),
           ],

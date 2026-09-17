@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -20,10 +20,11 @@ import '../providers/appointments_providers.dart';
 /// heuristic (no real check-in system behind this mock backend), and the
 /// screen re-evaluates on a timer so the wait estimate keeps ticking down.
 class QueueStatusView extends ConsumerStatefulWidget {
-  const QueueStatusView({super.key, this.compact = false, this.onTap});
+  const QueueStatusView({super.key, this.compact = false, this.onTap, this.fallback});
 
   final bool compact;
   final VoidCallback? onTap;
+  final Widget? fallback;
 
   static const int _minutesPerPatient = 15;
 
@@ -69,7 +70,7 @@ class _QueueStatusViewState extends ConsumerState<QueueStatusView> {
           );
 
           if (todaysMatches.isEmpty) {
-            return const Padding(
+            return widget.fallback ?? const Padding(
               padding: EdgeInsets.only(top: 60),
               child: EmptyStateView(
                 title: 'No visit today',
@@ -81,9 +82,8 @@ class _QueueStatusViewState extends ConsumerState<QueueStatusView> {
           }
 
           final appointment = todaysMatches.first;
-          final doctor = ref
-              .watch(userProfileProvider(appointment.doctorId))
-              .valueOrNull;
+          final availableDoctors = ref.watch(availableDoctorsProvider).valueOrNull ?? [];
+          final doctor = availableDoctors.where((d) => d.id == appointment.doctorId).firstOrNull;
           final queueAsync = ref.watch(
             todaysQueueProvider(appointment.doctorId),
           );
@@ -179,8 +179,7 @@ class _QueueStatusViewState extends ConsumerState<QueueStatusView> {
                           ),
                     const SizedBox(height: 6),
                     Text(
-                      'with Dr. ${doctor?.fullName.split(' ').last ?? ''}'
-                          .trim(),
+                      'with ${doctor?.fullName ?? 'your doctor'}',
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.white.withValues(alpha: 0.7),

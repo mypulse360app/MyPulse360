@@ -133,14 +133,13 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
             );
           }
 
-          final assignedDoctorId = profile?.assignedDoctorId;
-          final effectiveDoctorId = _selectedDoctorId ?? assignedDoctorId ?? availableDoctors.first.id;
-          final doctor = availableDoctors.firstWhere(
+          final effectiveDoctorId = _selectedDoctorId;
+          final doctor = effectiveDoctorId == null ? null : availableDoctors.firstWhere(
             (d) => d.id == effectiveDoctorId,
             orElse: () => availableDoctors.first,
           );
 
-          final slotsAsync = ref.watch(
+          final slotsAsync = doctor == null ? const AsyncValue<List<TimeSlot>>.data([]) : ref.watch(
             availableSlotsProvider((doctorId: doctor.id, date: _selectedDate)),
           );
 
@@ -202,7 +201,17 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
                                 const SizedBox(height: 12),
                                 DropdownButtonHideUnderline(
                                   child: DropdownButton<String>(
-                                    value: doctor.id,
+                                    value: _selectedDoctorId,
+                                    hint: const Text(
+                                      'Select a Doctor',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                        height: 1.1,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
                                     icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 28),
                                     dropdownColor: const Color(0xFF101015),
                                     isExpanded: true,
@@ -232,10 +241,11 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
                                   ),
                                 ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.2),
                                 const SizedBox(height: 6),
-                                Text(
-                                  'Cardiology Specialist',
-                                  style: TextStyle(fontSize: 15, color: Colors.white.withValues(alpha: 0.7), fontWeight: FontWeight.w500),
-                                ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2),
+                                if (doctor != null)
+                                  Text(
+                                    'Cardiology Specialist',
+                                    style: TextStyle(fontSize: 15, color: Colors.white.withValues(alpha: 0.7), fontWeight: FontWeight.w500),
+                                  ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2),
                               ],
                             ),
                           ),
@@ -284,37 +294,82 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              MonthCalendar(
-                                doctorId: effectiveDoctorId,
-                                selectedDate: _selectedDate,
-                                onSelected: (d) => setState(() {
-                                  _selectedDate = d;
-                                  _selectedSlot = null;
-                                }),
-                              ),
-                              const SizedBox(height: 36),
-                              
-                              AsyncSection(
-                                value: slotsAsync,
-                                data: (rawSlots) {
-                                  final slots = rawSlots.map((s) {
-                                    final selected =
-                                        _selectedSlot != null &&
-                                        s.dateTime == _selectedSlot!.dateTime;
-                                    return s.copyWith(isSelected: selected);
-                                  }).toList();
-
-                                  return Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                              if (effectiveDoctorId == null)
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(vertical: 60),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
+                                      Icon(Icons.person_search_rounded, size: 64, color: colors.textTertiary),
+                                      const SizedBox(height: 16),
                                       Text(
-                                        'Available Time',
-                                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                          fontWeight: FontWeight.w700,
+                                        'Please select a doctor to see their availability.',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: colors.textSecondary,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                      const SizedBox(height: 20),
-                                      if (slots.every((s) => s.isDisabled))
+                                    ],
+                                  ),
+                                )
+                              else ...[
+                                MonthCalendar(
+                                  doctorId: effectiveDoctorId,
+                                  selectedDate: _selectedDate,
+                                  onSelected: (d) => setState(() {
+                                    _selectedDate = d;
+                                    _selectedSlot = null;
+                                  }),
+                                ),
+                                const SizedBox(height: 36),
+                                
+                                AsyncSection(
+                                  value: slotsAsync,
+                                  data: (rawSlots) {
+                                    final isClinicClosed = ref.watch(clinicClosedProvider);
+                                    
+                                    final slots = rawSlots.map((s) {
+                                      final selected =
+                                          _selectedSlot != null &&
+                                          s.dateTime == _selectedSlot!.dateTime;
+                                      return s.copyWith(isSelected: selected);
+                                    }).toList();
+
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Available Time',
+                                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 20),
+                                        if (isClinicClosed)
+                                        Container(
+                                          padding: const EdgeInsets.all(20),
+                                          decoration: BoxDecoration(
+                                            color: colors.danger.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(color: colors.danger.withValues(alpha: 0.3)),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.report_problem_outlined, color: colors.danger),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Text(
+                                                  'The clinic has been temporarily closed by staff for today. Booking is disabled.',
+                                                  style: TextStyle(color: colors.danger, fontSize: 14),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      else if (slots.every((s) => s.isDisabled))
                                         Container(
                                           padding: const EdgeInsets.all(20),
                                           decoration: BoxDecoration(
@@ -328,9 +383,11 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
                                               const SizedBox(width: 12),
                                               Expanded(
                                                 child: Text(
-                                                  slots.any((s) => s.isDoctorOnLeave)
-                                                      ? '${doctor.fullName} is on leave this day.'
-                                                      : 'No slots available this day. Try selecting another date.',
+                                                  _selectedDate.weekday == DateTime.sunday
+                                                      ? 'The clinic is closed on Sundays.'
+                                                      : slots.any((s) => s.isDoctorOnLeave)
+                                                          ? '${doctor!.fullName} is on leave this day.'
+                                                          : 'No slots available this day. Try selecting another date.',
                                                   style: TextStyle(color: colors.textSecondary, fontSize: 14),
                                                 ),
                                               ),
@@ -345,56 +402,44 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
                                       
                                       const SizedBox(height: 48),
                                       
-                                      Row(
-                                        children: [
-                                          Container(
-                                            width: 56,
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: GestureDetector(
+                                          onTap: _selectedSlot == null || _booking 
+                                              ? null 
+                                              : () => _book(doctor!.id, user.id),
+                                          child: AnimatedContainer(
+                                            duration: const Duration(milliseconds: 200),
                                             height: 56,
                                             decoration: BoxDecoration(
-                                              color: colors.surfaceMuted,
-                                              shape: BoxShape.circle,
+                                              borderRadius: BorderRadius.circular(28),
+                                              color: _selectedSlot == null 
+                                                  ? colors.surfaceMuted 
+                                                  : colors.patientAccent,
                                             ),
-                                            child: Icon(Icons.chat_outlined, color: colors.textPrimary),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          Expanded(
-                                            child: GestureDetector(
-                                              onTap: _selectedSlot == null || _booking 
-                                                  ? null 
-                                                  : () => _book(doctor.id, user.id),
-                                              child: AnimatedContainer(
-                                                duration: const Duration(milliseconds: 200),
-                                                height: 56,
-                                                decoration: BoxDecoration(
-                                                  borderRadius: BorderRadius.circular(28),
-                                                  color: _selectedSlot == null 
-                                                      ? colors.surfaceMuted 
-                                                      : colors.patientAccent,
-                                                ),
-                                                child: Center(
-                                                  child: _booking 
-                                                    ? const SizedBox(
-                                                        width: 24, height: 24, 
-                                                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)
-                                                      )
-                                                    : Text(
-                                                        'Book Appointment',
-                                                        style: TextStyle(
-                                                          fontSize: 16, 
-                                                          fontWeight: FontWeight.w600,
-                                                          color: _selectedSlot == null ? colors.textTertiary : Colors.white,
-                                                        ),
-                                                      ),
-                                                ),
-                                              ),
+                                            child: Center(
+                                              child: _booking 
+                                                ? const SizedBox(
+                                                    width: 24, height: 24, 
+                                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)
+                                                  )
+                                                : Text(
+                                                    'Book Appointment',
+                                                    style: TextStyle(
+                                                      fontSize: 16, 
+                                                      fontWeight: FontWeight.w600,
+                                                      color: _selectedSlot == null ? colors.textTertiary : Colors.white,
+                                                    ),
+                                                  ),
                                             ),
                                           ),
-                                        ],
+                                        ),
                                       ),
                                     ],
                                   );
                                 },
                               ),
+                              ],
                             ],
                           ),
                         ),

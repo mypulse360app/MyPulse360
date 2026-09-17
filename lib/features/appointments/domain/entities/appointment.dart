@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 enum AppointmentStatus {
+  pending,
   scheduled,
   confirmed,
   inProgress,
@@ -9,6 +10,7 @@ enum AppointmentStatus {
   rescheduled;
 
   String get label => switch (this) {
+        AppointmentStatus.pending => 'Pending',
         AppointmentStatus.scheduled => 'Scheduled',
         AppointmentStatus.confirmed => 'Confirmed',
         AppointmentStatus.inProgress => 'In Progress',

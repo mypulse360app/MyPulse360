@@ -10,6 +10,7 @@ import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/chat_conversation.dart';
 import '../../domain/entities/chat_message.dart';
 import '../providers/chatbot_providers.dart';
+import '../../../appointments/presentation/providers/appointments_providers.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/quick_reply_chips.dart';
 import '../widgets/typing_indicator.dart';
@@ -46,7 +47,7 @@ class _HealthAssistantPageState extends ConsumerState<HealthAssistantPage> {
       final list = await ref.read(chatbotRepositoryProvider).getConversations(patientId);
       if (!mounted) return;
       setState(() {
-        _conversations = list;
+        _conversations = list.take(2).toList();
         ChatConversation active = resume;
         if (list.isNotEmpty) {
           active = list.firstWhere((c) => c.id == resume.id, orElse: () => list.first);
@@ -55,17 +56,25 @@ class _HealthAssistantPageState extends ConsumerState<HealthAssistantPage> {
         _loading = false;
       });
       _scrollToBottom();
-    } on Exception {
+    } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading chat: $e'), backgroundColor: Colors.red),
+      );
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
   }
 
   Future<void> _refreshConversations(String patientId) async {
     try {
       final list = await ref.read(chatbotRepositoryProvider).getConversations(patientId);
       if (!mounted) return;
-      setState(() => _conversations = list);
+      setState(() => _conversations = list.take(2).toList());
     } on Exception {
       // The drawer can still show the last-known list.
     }
@@ -77,11 +86,10 @@ class _HealthAssistantPageState extends ConsumerState<HealthAssistantPage> {
           await ref.read(chatbotRepositoryProvider).startNewConversation(patientId);
       if (!mounted) return;
       setState(() {
-        _conversations = [created, ..._conversations.where((c) => c.id != created.id)];
+        _conversations = [created, ..._conversations.where((c) => c.id != created.id)].take(2).toList();
         _active = created;
       });
       ref.read(chatRevisionProvider.notifier).state++;
-      if (context.mounted) Navigator.pop(context);
       _scrollToBottom();
     } on Exception {
       if (!mounted) return;
@@ -98,7 +106,13 @@ class _HealthAssistantPageState extends ConsumerState<HealthAssistantPage> {
 
   Future<void> _send(String patientId, String text) async {
     final active = _active;
-    if (active == null || text.trim().isEmpty) return;
+    if (active == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Chat not initialized yet.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    if (text.trim().isEmpty) return;
     _controller.clear();
     final optimistic = ChatMessage(
       id: '',
@@ -127,6 +141,18 @@ class _HealthAssistantPageState extends ConsumerState<HealthAssistantPage> {
     _scrollToBottom();
 
     if (reply.actionType == 'booking_success') {
+      if (reply.bookingDoctorId != null && reply.bookingDateTime != null) {
+        try {
+          await ref.read(appointmentsRepositoryProvider).book(
+                patientId: patientId,
+                doctorId: reply.bookingDoctorId!,
+                scheduledAt: reply.bookingDateTime!,
+                appointmentType: 'General checkup',
+                reasonForVisit: 'Booked via Health Assistant',
+              );
+          ref.read(appointmentsRevisionProvider.notifier).state++;
+        } catch (_) {}
+      }
       _showSuccessOverlay();
     } else if (reply.actionType == 'enable_dark_mode') {
       ref.read(themeModeProvider.notifier).setThemeMode(ThemeMode.dark);
@@ -265,7 +291,10 @@ class _HealthAssistantPageState extends ConsumerState<HealthAssistantPage> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 child: FilledButton.icon(
-                  onPressed: () => _newChat(user.id),
+                  onPressed: () {
+                    _newChat(user.id);
+                    Navigator.pop(context);
+                  },
                   icon: const Icon(Icons.add_comment_outlined),
                   label: const Text('New chat'),
                 ),
@@ -344,8 +373,8 @@ class _HealthAssistantPageState extends ConsumerState<HealthAssistantPage> {
                           Scaffold.of(context).openDrawer();
                         }),
                       ),
-                      _buildIconButton(Icons.settings, context, () {
-                        context.go(RoutePaths.patientProfile);
+                      _buildIconButton(Icons.add_comment_outlined, context, () {
+                        _newChat(user.id);
                       }),
                     ],
                   ),
@@ -368,7 +397,7 @@ class _HealthAssistantPageState extends ConsumerState<HealthAssistantPage> {
 
                   const Expanded(
                     child: Center(
-                      child: _CentralOrb(),
+                      child: IgnorePointer(child: _CentralOrb()),
                     ),
                   ),
 
@@ -446,6 +475,7 @@ class _HealthAssistantPageState extends ConsumerState<HealthAssistantPage> {
                         Expanded(
                           child: TextField(
                             controller: _controller,
+                            style: const TextStyle(color: Colors.black),
                             decoration: const InputDecoration(
                               hintText: 'Ask me anything...',
                               hintStyle: TextStyle(color: Colors.black54),
@@ -455,16 +485,17 @@ class _HealthAssistantPageState extends ConsumerState<HealthAssistantPage> {
                             onSubmitted: (text) => _send(user.id, text),
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () => _send(user.id, _controller.text),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF7B61FF),
-                              shape: BoxShape.circle,
+                        Material(
+                          color: const Color(0xFF7B61FF),
+                          shape: const CircleBorder(),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () => _send(user.id, _controller.text),
+                            child: SizedBox(
+                              width: 40,
+                              height: 40,
+                              child: const Icon(Icons.mic, color: Colors.white),
                             ),
-                            child: const Icon(Icons.mic, color: Colors.white),
                           ),
                         ),
                       ],
@@ -510,33 +541,32 @@ class _HealthAssistantPageState extends ConsumerState<HealthAssistantPage> {
   }
 
   Widget _buildActionChip(IconData icon, String label, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        backgroundColor: Colors.white.withValues(alpha: 0.6),
+        side: const BorderSide(color: Colors.white, width: 1.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white, width: 1.5),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: const Color(0xFF7B61FF), size: 18),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF333333),
-                  fontWeight: FontWeight.w500,
-                  fontSize: 13,
-                ),
-                overflow: TextOverflow.ellipsis,
+        elevation: 0,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: const Color(0xFF7B61FF), size: 18),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF333333),
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
