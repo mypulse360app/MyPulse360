@@ -165,7 +165,8 @@ class DashboardPage extends ConsumerWidget {
                                 return a.scheduledAt.year == now.year &&
                                        a.scheduledAt.month == now.month &&
                                        a.scheduledAt.day == now.day &&
-                                       a.status != AppointmentStatus.cancelled;
+                                       a.status != AppointmentStatus.cancelled &&
+                                       a.status != AppointmentStatus.completed;
                               }
                             ),
                             orElse: () => false,

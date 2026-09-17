@@ -66,7 +66,8 @@ class _QueueStatusViewState extends ConsumerState<QueueStatusView> {
                 a.scheduledAt.year == now.year &&
                 a.scheduledAt.month == now.month &&
                 a.scheduledAt.day == now.day &&
-                a.status != AppointmentStatus.cancelled,
+                a.status != AppointmentStatus.cancelled &&
+                a.status != AppointmentStatus.completed,
           );
 
           if (todaysMatches.isEmpty) {

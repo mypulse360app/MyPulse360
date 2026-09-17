@@ -31,15 +31,15 @@ class PrescriptionsListPage extends ConsumerWidget {
         actions: [
           IconButton(
             onPressed: () => _scan(context),
-            icon: const Icon(Icons.qr_code_scanner_rounded),
-            tooltip: 'Scan prescription',
+            icon: const Icon(Icons.document_scanner_rounded),
+            tooltip: 'Scan prescription (OCR)',
           ),
         ],
       ),
       body: prescriptions.isEmpty
           ? EmptyStateView(
               title: 'No prescriptions yet',
-              message: 'Prescriptions from your doctor will show up here — or scan a paper prescription to add it.',
+              message: 'Prescriptions from your doctor will show up here — or take a photo of a prescription to add it.',
               icon: Icons.medication_outlined,
               actionLabel: 'Scan Prescription',
               onAction: () => _scan(context),

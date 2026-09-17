@@ -1,13 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../../../config/env/env.dart';
+import '../../../../shared/data/supabase_providers.dart';
 import '../../../../shared/mock/mock_database.dart';
 import '../../data/datasources/mock_prescriptions_datasource.dart';
+import '../../data/datasources/supabase_prescriptions_datasource.dart';
 import '../../data/repositories/prescriptions_repository_impl.dart';
 import '../../domain/entities/prescription.dart';
 import '../../domain/repositories/prescriptions_repository.dart';
 
 final prescriptionsRepositoryProvider = Provider<PrescriptionsRepository>((ref) {
-  return PrescriptionsRepositoryImpl(MockPrescriptionsDataSource(ref.watch(mockDatabaseProvider)));
+  final ds = Env.isMockMode
+      ? MockPrescriptionsDataSource(ref.watch(mockDatabaseProvider))
+      : SupabasePrescriptionsDataSource(ref.watch(supabaseClientProvider));
+  return PrescriptionsRepositoryImpl(ds);
 });
 
 /// Bumped after create/dispense/status changes so dependent providers

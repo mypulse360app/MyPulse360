@@ -62,16 +62,82 @@ class _TemperatureInputDialogState extends ConsumerState<TemperatureInputDialog>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Enter patient body temperature in Celsius:'),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _tempController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: 'Temperature (°C)',
-              hintText: 'e.g. 37.5',
-            ),
+          const Text('Scan the patient\'s temperature using the clinic scanner. The reading will appear below automatically in real-time.'),
+          const SizedBox(height: 16),
+          Consumer(
+            builder: (context, ref, child) {
+              final tempScan = ref.watch(latestTemperatureLogProvider).valueOrNull;
+              
+              if (tempScan != null) {
+                // Auto-fill the controller so _submit uses it
+                if (_tempController.text.isEmpty) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      _tempController.text = tempScan['temperature'].toString();
+                    }
+                  });
+                }
+              }
+              
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (tempScan != null)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: colors.success.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: colors.success),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, color: colors.success, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Scanner detected: ${tempScan['temperature']} °C from ${tempScan['device']}',
+                              style: TextStyle(color: colors.success, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: colors.warning.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: colors.warning),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.sensors, color: colors.warning, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Waiting for scanner input...',
+                              style: TextStyle(color: colors.warning, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  TextField(
+                    controller: _tempController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Temperature (°C)',
+                      hintText: 'e.g. 37.5',
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

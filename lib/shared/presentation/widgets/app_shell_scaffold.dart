@@ -116,7 +116,9 @@ class _AppShellScaffoldState extends State<AppShellScaffold> {
     return Scaffold(
       extendBody: true,
       body: widget.navigationShell,
-      bottomNavigationBar: SafeArea(
+      bottomNavigationBar: widget.items.length <= 1
+          ? null
+          : SafeArea(
         top: false,
         minimum: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         child: Container(

@@ -146,6 +146,7 @@ class SupabaseAppointmentsDataSource implements AppointmentsDataSource {
               .where((a) {
                 final at = a.scheduledAt.toLocal();
                 return a.status != AppointmentStatus.cancelled &&
+                    a.status != AppointmentStatus.completed &&
                     at.year == today.year &&
                     at.month == today.month &&
                     at.day == today.day;

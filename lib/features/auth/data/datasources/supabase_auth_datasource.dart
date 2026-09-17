@@ -133,35 +133,65 @@ class SupabaseAuthDataSource implements AuthDataSource {
     required String clinicId,
   }) async {
     try {
-      final response = await _client.functions.invoke(
-        'create-staff-account',
-        body: {
-          'email': email.trim(),
-          'tempPassword': tempPassword,
-          'fullName': fullName.trim(),
-          'role': userRoleToDb(role),
-          // Sent for completeness; the function uses the caller's own clinic
-          // and ignores this, so a doctor cannot provision into another clinic.
-          'clinicId': clinicId,
-        },
-      );
+      // First attempt via database RPC (atomic, secure, provisions auth and profile)
+      final row = await _client.rpc('create_staff_account', params: {
+        'p_email': email.trim(),
+        'p_temp_password': tempPassword,
+        'p_full_name': fullName.trim(),
+        'p_role': userRoleToDb(role),
+      });
 
-      final data = response.data;
-      if (data is! Map) {
+      if (row is! Map) {
         throw const DbFailure('Could not create that account.');
       }
-      return _toUser(Map<String, dynamic>.from(data));
-    } on FunctionsHttpException catch (e) {
-      final details = e.details;
-      throw DbFailure(
-        details is Map && details['error'] is String
-            ? details['error'] as String
-            : 'Could not create that account.',
-      );
-    } on DbFailure {
-      rethrow;
-    } catch (e) {
-      throw mapPostgrestError(e);
+      return _toUser(Map<String, dynamic>.from(row));
+    } catch (rpcError) {
+      // If RPC is missing (error 42883), fallback to Edge Function; otherwise handle the db failure
+      if (rpcError is PostgrestException && rpcError.code != '42883') {
+        throw mapPostgrestError(rpcError);
+      }
+      if (rpcError is DbFailure) {
+        rethrow;
+      }
+
+      // Fallback to Edge Function
+      try {
+        final response = await _client.functions.invoke(
+          'create-staff-account',
+          body: {
+            'email': email.trim(),
+            'tempPassword': tempPassword,
+            'fullName': fullName.trim(),
+            'role': userRoleToDb(role),
+            // Sent for completeness; the function uses the caller's own clinic
+            // and ignores this, so a doctor cannot provision into another clinic.
+            'clinicId': clinicId,
+          },
+        );
+
+        final data = response.data;
+        if (data is! Map) {
+          throw const DbFailure('Could not create that account.');
+        }
+        return _toUser(Map<String, dynamic>.from(data));
+      } on FunctionsHttpException catch (e) {
+        final details = e.details;
+        String? message;
+        if (details is Map && details['error'] is String) {
+          message = details['error'] as String;
+        } else if (details is Map && details['message'] is String) {
+          message = details['message'] as String;
+        } else if (details is String && details.isNotEmpty) {
+          message = details;
+        }
+        throw DbFailure(
+          message ?? (details != null ? details.toString() : 'Could not create that account.'),
+        );
+      } on DbFailure {
+        rethrow;
+      } catch (e) {
+        throw mapPostgrestError(e);
+      }
     }
   }
 

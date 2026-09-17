@@ -33,6 +33,7 @@ abstract final class RoutePaths {
   static const String pharmacistPrescriptions = '/pharmacist/prescriptions';
   static const String pharmacistVerify = '/pharmacist/verify/:prescriptionId';
   static const String pharmacistCreatePrescription = '/pharmacist/create-prescription/:consultationId';
+  static const String pharmacistProcessPrescription = '/pharmacist/process-prescription/:consultationId';
 
   static String healthMetricDetail(String type) => '/patient/health-metrics/$type';
   static String appointmentDetail(String appointmentId) => '/patient/appointments/$appointmentId';
@@ -42,6 +43,7 @@ abstract final class RoutePaths {
           : '/doctor/patient-history/$patientId?appointmentId=$appointmentId';
   static String verify(String prescriptionId) => '/pharmacist/verify/$prescriptionId';
   static String createPrescription(String consultationId) => '/pharmacist/create-prescription/$consultationId';
+  static String processPrescription(String consultationId) => '/pharmacist/process-prescription/$consultationId';
 
   const RoutePaths._();
 

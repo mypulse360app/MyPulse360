@@ -35,6 +35,7 @@ class _AddStaffSheetState extends ConsumerState<_AddStaffSheet> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   UserRole _role = UserRole.pharmacist;
+  bool _obscurePassword = true;
   bool _saving = false;
   String? _error;
 
@@ -71,7 +72,7 @@ class _AddStaffSheetState extends ConsumerState<_AddStaffSheet> {
     } catch (e) {
       setState(() {
         _saving = false;
-        _error = e.toString();
+        _error = e.toString().replaceFirst('Exception: ', '').replaceFirst('DbFailure: ', '');
       });
     }
   }
@@ -150,12 +151,21 @@ class _AddStaffSheetState extends ConsumerState<_AddStaffSheet> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: _passwordController,
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Temporary password',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                     isDense: true,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        size: 20,
+                        color: colors.textSecondary,
+                      ),
+                      tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    ),
                   ),
                 ),
                 PasswordStrengthHint(password: _passwordController.text),

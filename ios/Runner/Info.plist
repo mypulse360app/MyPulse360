@@ -5,7 +5,9 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Used to scan medication barcodes and take photos of prescriptions.</string>
+	<string>Used to take photos of prescriptions and medication packages for OCR text recognition.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Used to select prescription photos from your library for OCR text recognition.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

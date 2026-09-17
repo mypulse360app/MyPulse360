@@ -63,7 +63,25 @@ class MockDatabase {
         attendanceRecords = [],
         staffNotifications = [],
         chatConversations = [seedChat()],
-        consultations = [],
+        consultations = [
+          const Consultation(
+            id: 'consultation-james-today',
+            appointmentId: 'appt-today-1',
+            patientId: MockIds.patient2Id,
+            doctorId: MockIds.drAhmedDoctorId,
+            status: ConsultationStatus.completed,
+            diagnosis: 'Stage 1 Essential Hypertension',
+            notes: 'Patient presented for hypertension follow-up. BP slightly elevated at 142/90 mmHg. Prescribing Lisinopril 10mg once daily in the morning for 30 days. Counselled on low-sodium dietary habits, adequate hydration, and continuous BP monitoring.',
+            recommendations: 'Follow up in 30 days for routine blood pressure and kidney function re-evaluation.',
+            vitals: ConsultationVitals(
+              temperatureCelsius: 36.8,
+              systolicBp: 142,
+              diastolicBp: 90,
+              heartRate: 76,
+              weightKg: 78.5,
+            ),
+          ),
+        ],
         credentials = CredentialsStore() {
     seedDemoCredentials(credentials, users);
   }

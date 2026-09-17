@@ -52,11 +52,6 @@ const Map<UserRole, RoleNavConfig> kRoleNavConfig = {
     rootPath: RoutePaths.pharmacistDashboard,
     items: [
       NavItem(icon: Icons.groups_outlined, selectedIcon: Icons.groups_rounded, label: 'Queue'),
-      NavItem(
-        icon: Icons.receipt_long_outlined,
-        selectedIcon: Icons.receipt_long_rounded,
-        label: 'Prescription',
-      ),
     ],
   ),
 };

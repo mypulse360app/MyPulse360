@@ -79,6 +79,7 @@ List<Prescription> seedPrescriptions() {
       id: 'rx-james-pending',
       patientId: MockIds.patient2Id,
       doctorId: MockIds.drAhmedDoctorId,
+      consultationId: 'consultation-james-today',
       issuedDate: now,
       expiryDate: now.add(const Duration(days: 30)),
       status: PrescriptionStatus.active,

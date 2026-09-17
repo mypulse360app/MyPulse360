@@ -13,8 +13,11 @@ import '../../../appointments/domain/entities/appointment.dart';
 import '../../../appointments/presentation/providers/appointments_providers.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../patient/presentation/providers/patient_providers.dart';
+import '../../../prescriptions/domain/entities/prescription.dart';
+import '../../../prescriptions/domain/entities/prescription_item.dart';
 import '../../../prescriptions/presentation/providers/prescriptions_providers.dart';
 import '../../../prescriptions/presentation/widgets/prescription_card.dart';
+import '../../../../shared/utils/id_generator.dart';
 import '../../domain/entities/consultation.dart';
 import '../providers/doctor_providers.dart';
 import '../widgets/sticky_submit_bar.dart';
@@ -55,15 +58,46 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
     final existing = ref
         .read(doctorRepositoryProvider)
         .startOrGetConsultation(appointmentId, widget.patientId, doctorId);
+    final notes = _medicationNoteController.text.trim();
     final consultation = Consultation(
       id: existing.id,
       appointmentId: existing.appointmentId,
       patientId: existing.patientId,
       doctorId: existing.doctorId,
       status: existing.status,
-      notes: _medicationNoteController.text.trim(),
+      notes: notes,
     );
     await ref.read(doctorRepositoryProvider).submitConsultation(consultation);
+
+    // If doctor wrote medication notes, create active prescription for pharmacy queue
+    if (notes.isNotEmpty) {
+      final rx = Prescription(
+        id: generateId(),
+        patientId: widget.patientId,
+        doctorId: doctorId,
+        consultationId: consultation.id,
+        issuedDate: DateTime.now(),
+        expiryDate: DateTime.now().add(const Duration(days: 30)),
+        status: PrescriptionStatus.active,
+        source: PrescriptionSource.inApp,
+        items: [
+          PrescriptionItem(
+            id: generateId(),
+            medicationName: notes,
+            strength: 'As prescribed',
+            form: 'medication',
+            quantity: 1,
+            unit: 'pack',
+            frequency: 'As directed',
+            durationDays: 30,
+            instructions: notes,
+          ),
+        ],
+      );
+      await ref.read(prescriptionsRepositoryProvider).create(rx);
+      ref.read(prescriptionsRevisionProvider.notifier).state++;
+    }
+
     ref.read(appointmentsRevisionProvider.notifier).state++;
     if (!mounted) return;
     setState(() => _marking = false);
