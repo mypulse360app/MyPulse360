@@ -33,7 +33,7 @@ class SupabasePharmacistDataSource implements PharmacistDataSource {
   List<Appointment> getTodaysAppointments() => const [];
 
   @override
-  Future<void> logTemperature(
+  Future<String> logTemperature(
     String appointmentId,
     String patientId,
     String doctorId,
@@ -57,7 +57,11 @@ class SupabasePharmacistDataSource implements PharmacistDataSource {
       await _client.from('consultations').update({
         'notes': 'Vitals logged: Temp ${temperature.toStringAsFixed(1)} °C',
       }).eq('id', res['id']);
+      return res['id'] as String;
     }
+    
+    // No existing consultation — return empty string
+    return '';
   }
 
   /// Real-time stream of today's appointments for the clinic

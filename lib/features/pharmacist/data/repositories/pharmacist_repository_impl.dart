@@ -23,7 +23,7 @@ class PharmacistRepositoryImpl implements PharmacistRepository {
   List<Appointment> getTodaysAppointments() => _dataSource.getTodaysAppointments();
 
   @override
-  Future<void> logTemperature(String appointmentId, String patientId, String doctorId, double temperature) {
+  Future<String> logTemperature(String appointmentId, String patientId, String doctorId, double temperature) {
     return _dataSource.logTemperature(appointmentId, patientId, doctorId, temperature);
   }
 }

@@ -15,5 +15,5 @@ abstract class PharmacistRepository {
 
   List<Appointment> getTodaysAppointments();
 
-  Future<void> logTemperature(String appointmentId, String patientId, String doctorId, double temperature);
+  Future<String> logTemperature(String appointmentId, String patientId, String doctorId, double temperature);
 }

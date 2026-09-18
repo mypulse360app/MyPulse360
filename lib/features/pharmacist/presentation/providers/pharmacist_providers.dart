@@ -86,9 +86,9 @@ final latestTemperatureLogProvider = StreamProvider.autoDispose<Map<String, dyna
         await Future.delayed(const Duration(seconds: 6));
         yield {
           'temperature': temps[idx % temps.length],
-          'device': 'Lobby Scanner 01',
+          'device': 'ESP8266',
           'status': 'normal',
-          'timestamp': DateTime.now(),
+          'created_at': DateTime.now(),
         };
         idx++;
       }

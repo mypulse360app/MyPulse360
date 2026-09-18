@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../config/router/route_paths.dart';
 import '../../../../config/theme/app_theme.dart';
 import '../../../../shared/presentation/widgets/primary_button.dart';
 import '../../../appointments/domain/entities/appointment.dart';
@@ -23,6 +25,14 @@ class TemperatureInputDialog extends ConsumerStatefulWidget {
 class _TemperatureInputDialogState extends ConsumerState<TemperatureInputDialog> {
   final _tempController = TextEditingController();
   bool _saving = false;
+  late final DateTime _openedAt;
+  Map<String, dynamic>? _detectedScan;
+
+  @override
+  void initState() {
+    super.initState();
+    _openedAt = DateTime.now();
+  }
 
   @override
   void dispose() {
@@ -39,7 +49,7 @@ class _TemperatureInputDialogState extends ConsumerState<TemperatureInputDialog>
 
     setState(() => _saving = true);
     
-    await ref.read(pharmacistRepositoryProvider).logTemperature(
+    final consultationId = await ref.read(pharmacistRepositoryProvider).logTemperature(
       widget.appointment.id,
       widget.appointment.patientId,
       widget.appointment.doctorId,
@@ -50,6 +60,11 @@ class _TemperatureInputDialogState extends ConsumerState<TemperatureInputDialog>
     
     if (!mounted) return;
     Navigator.of(context).pop();
+    
+    // Navigate to Process Prescription after logging vitals
+    if (consultationId.isNotEmpty) {
+      context.push(RoutePaths.processPrescription(consultationId));
+    }
   }
 
   @override
@@ -68,21 +83,27 @@ class _TemperatureInputDialogState extends ConsumerState<TemperatureInputDialog>
             builder: (context, ref, child) {
               final tempScan = ref.watch(latestTemperatureLogProvider).valueOrNull;
               
+              // Accept scans from the last 2 minutes or any new scan after dialog opened
               if (tempScan != null) {
-                // Auto-fill the controller so _submit uses it
-                if (_tempController.text.isEmpty) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) {
-                      _tempController.text = tempScan['temperature'].toString();
-                    }
-                  });
+                final scanTime = tempScan['created_at'] as DateTime?;
+                final cutoff = _openedAt.subtract(const Duration(minutes: 2));
+                if (scanTime != null && scanTime.isAfter(cutoff)) {
+                  // Recent scan detected — always update
+                  if (_detectedScan == null || _detectedScan!['created_at'] != scanTime) {
+                    _detectedScan = tempScan;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        _tempController.text = tempScan['temperature'].toString();
+                      }
+                    });
+                  }
                 }
               }
               
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (tempScan != null)
+                  if (_detectedScan != null)
                     Container(
                       padding: const EdgeInsets.all(12),
                       margin: const EdgeInsets.only(bottom: 16),
@@ -97,7 +118,7 @@ class _TemperatureInputDialogState extends ConsumerState<TemperatureInputDialog>
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Scanner detected: ${tempScan['temperature']} °C from ${tempScan['device']}',
+                              'Scanner detected: ${_detectedScan!['temperature']} °C from ${_detectedScan!['device']}',
                               style: TextStyle(color: colors.success, fontWeight: FontWeight.w600),
                             ),
                           ),

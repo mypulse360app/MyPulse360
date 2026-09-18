@@ -1,4 +1,4 @@
-﻿import '../../../../shared/mock/mock_database.dart';
+import '../../../../shared/mock/mock_database.dart';
 import '../../../../shared/utils/id_generator.dart';
 import '../../../appointments/domain/entities/appointment.dart';
 import '../../../doctor/domain/entities/consultation.dart';
@@ -58,7 +58,7 @@ class MockPharmacistDataSource implements PharmacistDataSource {
   }
 
   @override
-  Future<void> logTemperature(String appointmentId, String patientId, String doctorId, double temperature) async {
+  Future<String> logTemperature(String appointmentId, String patientId, String doctorId, double temperature) async {
     Consultation? existing;
     for (final c in _db.consultations) {
       if (c.appointmentId == appointmentId) {
@@ -92,5 +92,6 @@ class MockPharmacistDataSource implements PharmacistDataSource {
     );
     
     _db.upsertConsultation(updated);
+    return updated.id;
   }
 }
