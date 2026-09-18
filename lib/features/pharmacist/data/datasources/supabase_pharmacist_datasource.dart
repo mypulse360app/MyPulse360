@@ -39,29 +39,34 @@ class SupabasePharmacistDataSource implements PharmacistDataSource {
     String doctorId,
     double temperature,
   ) async {
-    // 1. Insert into temperature_logs for IoT hardware audit
-    await _client.from('temperature_logs').insert({
-      'temperature': temperature,
-      'status': temperature >= 37.5 ? 'fever' : 'normal',
-      'device': 'Clinic Assistant Station',
-    });
-
-    // 2. Check if consultation exists to attach vitals
+    // 1. Check if consultation exists for this appointment
     final res = await _client
         .from('consultations')
         .select('id')
         .eq('appointment_id', appointmentId)
         .maybeSingle();
 
+    String consultationId;
+
     if (res != null) {
+      // Update existing consultation with vitals note
+      consultationId = res['id'] as String;
       await _client.from('consultations').update({
         'notes': 'Vitals logged: Temp ${temperature.toStringAsFixed(1)} °C',
-      }).eq('id', res['id']);
-      return res['id'] as String;
+      }).eq('id', consultationId);
+    } else {
+      // Create new consultation for this appointment
+      final inserted = await _client.from('consultations').insert({
+        'appointment_id': appointmentId,
+        'patient_id': patientId,
+        'doctor_id': doctorId,
+        'status': 'in_progress',
+        'notes': 'Vitals logged: Temp ${temperature.toStringAsFixed(1)} °C',
+      }).select('id').single();
+      consultationId = inserted['id'] as String;
     }
-    
-    // No existing consultation — return empty string
-    return '';
+
+    return consultationId;
   }
 
   /// Real-time stream of today's appointments for the clinic
