@@ -22,4 +22,10 @@ abstract class PharmacistRepository {
     double temperature, {
     String? temperatureLogId,
   });
+
+  Future<String> getOrCreateConsultation({
+    required String appointmentId,
+    required String patientId,
+    required String doctorId,
+  });
 }

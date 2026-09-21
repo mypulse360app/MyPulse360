@@ -10,6 +10,7 @@ List<AppUser> seedUsers() => [
         role: UserRole.patient,
         clinicId: MockIds.defaultClinicId,
         phone: '+1 555-0101',
+        displayId: 'P1',
       ),
       const AppUser(
         id: MockIds.drAhmedUserId,
@@ -18,6 +19,7 @@ List<AppUser> seedUsers() => [
         role: UserRole.doctor,
         clinicId: MockIds.defaultClinicId,
         phone: '+1 555-0102',
+        displayId: 'D1',
       ),
       const AppUser(
         id: MockIds.fatimaUserId,
@@ -26,6 +28,7 @@ List<AppUser> seedUsers() => [
         role: UserRole.pharmacist,
         clinicId: MockIds.defaultClinicId,
         phone: '+1 555-0103',
+        displayId: 'CA1',
       ),
       const AppUser(
         id: MockIds.patient2Id,
@@ -33,6 +36,7 @@ List<AppUser> seedUsers() => [
         fullName: 'James Carter',
         role: UserRole.patient,
         clinicId: MockIds.defaultClinicId,
+        displayId: 'P2',
       ),
       const AppUser(
         id: MockIds.patient3Id,
@@ -40,6 +44,7 @@ List<AppUser> seedUsers() => [
         fullName: 'Mei Lin',
         role: UserRole.patient,
         clinicId: MockIds.defaultClinicId,
+        displayId: 'P3',
       ),
       const AppUser(
         id: MockIds.patient4Id,
@@ -47,5 +52,6 @@ List<AppUser> seedUsers() => [
         fullName: 'Omar Hassan',
         role: UserRole.patient,
         clinicId: MockIds.defaultClinicId,
+        displayId: 'P4',
       ),
     ];

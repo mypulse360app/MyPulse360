@@ -11,6 +11,7 @@ class AppUser extends Equatable {
     required this.clinicId,
     this.phone,
     this.avatarUrl,
+    this.displayId,
     this.isActive = true,
     this.mustChangePassword = false,
   });
@@ -22,6 +23,7 @@ class AppUser extends Equatable {
   final String clinicId;
   final String? phone;
   final String? avatarUrl;
+  final String? displayId;
 
   /// Deactivated accounts (e.g. staff who left the clinic) are refused
   /// login even with a correct password.
@@ -31,7 +33,7 @@ class AppUser extends Equatable {
   /// password" step before the account can reach any dashboard.
   final bool mustChangePassword;
 
-  AppUser copyWith({String? email, bool? isActive, bool? mustChangePassword}) => AppUser(
+  AppUser copyWith({String? email, bool? isActive, bool? mustChangePassword, String? displayId}) => AppUser(
         id: id,
         email: email ?? this.email,
         fullName: fullName,
@@ -39,11 +41,12 @@ class AppUser extends Equatable {
         clinicId: clinicId,
         phone: phone,
         avatarUrl: avatarUrl,
+        displayId: displayId ?? this.displayId,
         isActive: isActive ?? this.isActive,
         mustChangePassword: mustChangePassword ?? this.mustChangePassword,
       );
 
   @override
   List<Object?> get props =>
-      [id, email, fullName, role, clinicId, phone, avatarUrl, isActive, mustChangePassword];
+      [id, email, fullName, role, clinicId, phone, avatarUrl, displayId, isActive, mustChangePassword];
 }

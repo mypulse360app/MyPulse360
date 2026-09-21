@@ -69,11 +69,16 @@ class SupabasePharmacistDataSource implements PharmacistDataSource {
 
     // 2. Link or Create the temperature log
     if (temperatureLogId != null) {
+      // Claim the unassigned IoT scan and link it to this patient/appointment.
+      // Also update the temperature value in case the assistant edited it.
+      // The .is_('patient_id', null) guard prevents double-assignment —
+      // if the scan was already linked to another patient, this is a no-op.
       await _client.from('temperature_logs').update({
         'patient_id': patientId,
         'appointment_id': appointmentId,
+        'temperature': temperature,
         'status': temperature > 37.5 ? 'fever' : 'normal',
-      }).eq('id', temperatureLogId);
+      }).eq('id', temperatureLogId).isFilter('patient_id', null);
     } else {
       await _client.from('temperature_logs').insert({
         'patient_id': patientId,
@@ -85,6 +90,32 @@ class SupabasePharmacistDataSource implements PharmacistDataSource {
     }
 
     return consultationId;
+  }
+
+  @override
+  Future<String> getOrCreateConsultation({
+    required String appointmentId,
+    required String patientId,
+    required String doctorId,
+  }) async {
+    final res = await _client
+        .from('consultations')
+        .select('id')
+        .eq('appointment_id', appointmentId)
+        .maybeSingle();
+
+    if (res != null) {
+      return res['id'] as String;
+    }
+
+    final inserted = await _client.from('consultations').insert({
+      'appointment_id': appointmentId,
+      'patient_id': patientId,
+      'doctor_id': doctorId,
+      'status': 'in_progress',
+    }).select('id').single();
+
+    return inserted['id'] as String;
   }
 
   /// Real-time stream of today's appointments for the clinic
@@ -188,23 +219,40 @@ class SupabasePharmacistDataSource implements PharmacistDataSource {
         });
   }
 
-  /// Real-time stream of latest hardware temperature scans from IoT device
-  Stream<Map<String, dynamic>?> watchLatestTemperatureLog() {
-    return _client
-        .from('temperature_logs')
-        .stream(primaryKey: ['id'])
-        .order('created_at', ascending: false)
-        .limit(1)
-        .map((rows) {
-          if (rows.isEmpty) return null;
-          final r = rows.first;
-          return {
-            'id': r['id'],
-            'temperature': (r['temperature'] as num).toDouble(),
-            'device': r['device'] ?? 'Lobby Scanner',
-            'status': r['status'] ?? 'normal',
-            'created_at': DateTime.parse(r['created_at'] as String).toLocal(),
-          };
-        });
+  /// Real-time stream of latest **unassigned** hardware temperature scans
+  /// from IoT devices (patient_id IS NULL).  Only these scans are eligible
+  /// for the clinic assistant to claim and link to a specific patient.
+  Stream<Map<String, dynamic>?> watchUnassignedTemperatureScans() async* {
+    // Initial fetch
+    yield await _fetchLatestUnassignedScan();
+
+    // Poll every 3 seconds for new unassigned scans.
+    // We use polling because Supabase .stream() does not support
+    // .is_('patient_id', null) filters natively.
+    await for (final _ in Stream.periodic(const Duration(seconds: 3))) {
+      yield await _fetchLatestUnassignedScan();
+    }
+  }
+
+  Future<Map<String, dynamic>?> _fetchLatestUnassignedScan() async {
+    try {
+      final rows = await _client
+          .from('temperature_logs')
+          .select()
+          .isFilter('patient_id', null)
+          .order('created_at', ascending: false)
+          .limit(1);
+      if (rows.isEmpty) return null;
+      final r = rows.first;
+      return {
+        'id': r['id'],
+        'temperature': (r['temperature'] as num).toDouble(),
+        'device': r['device'] ?? 'Lobby Scanner',
+        'status': r['status'] ?? 'normal',
+        'created_at': DateTime.parse(r['created_at'] as String).toLocal(),
+      };
+    } catch (_) {
+      return null;
+    }
   }
 }

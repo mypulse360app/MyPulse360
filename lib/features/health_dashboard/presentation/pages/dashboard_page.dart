@@ -18,6 +18,7 @@ import '../../../patient/presentation/providers/patient_providers.dart';
 import '../../../appointments/presentation/widgets/queue_status_view.dart';
 import '../../../health_tips/data/health_tips_data.dart';
 import '../../../health_tips/presentation/widgets/health_tip_card.dart';
+import '../providers/health_dashboard_providers.dart';
 import '../widgets/next_appointment_banner.dart';
 import '../widgets/wellness_goal_row.dart';
 
@@ -236,6 +237,13 @@ class DashboardPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 24),
+            Text(
+              'Body Temperature',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            _PatientTemperatureSection(patientId: user.id),
+            const SizedBox(height: 24),
             SectionHeader(
               title: 'Your Goals This Week',
               // Hiding the shortcut while unsettled is a safe default (it
@@ -353,6 +361,157 @@ class _HeroActionCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PatientTemperatureSection extends ConsumerWidget {
+  const _PatientTemperatureSection({required this.patientId});
+
+  final String patientId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tempAsync = ref.watch(patientLatestTemperatureProvider(patientId));
+    final colors = context.colors;
+
+    return tempAsync.when(
+      loading: () => Container(
+        height: 64,
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: colors.border),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+      error: (error, stack) => const SizedBox.shrink(),
+      data: (data) {
+        if (data == null) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: colors.border),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(Icons.thermostat_outlined, size: 20, color: colors.textSecondary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'No temperature readings recorded yet. Your vitals will appear here after clinic check-in.',
+                      style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final rawTemp = data['temperature'];
+        final tempVal = rawTemp is num ? rawTemp.toDouble() : double.tryParse(rawTemp.toString()) ?? 36.8;
+        final isFever = tempVal > 37.5;
+        final device = data['device']?.toString() ?? 'Clinic Scanner';
+
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isFever ? colors.danger.withValues(alpha: 0.5) : colors.border,
+              width: isFever ? 1.5 : 1.0,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isFever
+                        ? colors.danger.withValues(alpha: 0.15)
+                        : colors.patientAccent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.thermostat_rounded,
+                    size: 24,
+                    color: isFever ? colors.danger : colors.patientAccent,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            tempVal.toStringAsFixed(1),
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '°C',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Recorded via $device',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isFever
+                        ? colors.danger.withValues(alpha: 0.15)
+                        : const Color(0xFF10B981).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    isFever ? 'Fever' : 'Normal',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: isFever ? colors.danger : const Color(0xFF10B981),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

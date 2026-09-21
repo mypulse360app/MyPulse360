@@ -14,7 +14,7 @@ class SupabaseAuthDataSource implements AuthDataSource {
   final SupabaseClient _client;
 
   static const _profileColumns =
-      'id, email, full_name, role, clinic_id, phone, avatar_url, is_active, must_change_password';
+      'id, email, full_name, role, clinic_id, phone, avatar_url, display_id, is_active, must_change_password';
 
   AppUser _toUser(Map<String, dynamic> row) => AppUser(
         id: row['id'] as String,
@@ -24,6 +24,7 @@ class SupabaseAuthDataSource implements AuthDataSource {
         clinicId: row['clinic_id'] as String,
         phone: row['phone'] as String?,
         avatarUrl: row['avatar_url'] as String?,
+        displayId: row['display_id'] as String?,
         isActive: row['is_active'] as bool,
         mustChangePassword: row['must_change_password'] as bool,
       );

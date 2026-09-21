@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../config/theme/app_radii.dart';
 import '../../../../config/theme/app_theme.dart';
-import '../../../../shared/presentation/widgets/secondary_button.dart';
 import '../../../../shared/utils/id_generator.dart';
 import '../../../prescriptions/domain/entities/prescription_item.dart';
 
@@ -21,6 +19,8 @@ class _PrescriptionItemFormState extends State<PrescriptionItemForm> {
   final _frequency = TextEditingController();
   final _duration = TextEditingController(text: '7');
   final _instructions = TextEditingController();
+  bool _isExpanded = false;
+  final String _selectedForm = 'tablet';
 
   @override
   void dispose() {
@@ -39,9 +39,9 @@ class _PrescriptionItemFormState extends State<PrescriptionItemForm> {
         id: generateId(),
         medicationName: _name.text.trim(),
         strength: _strength.text.trim().isEmpty ? '—' : _strength.text.trim(),
-        form: 'tablet',
+        form: _selectedForm,
         quantity: (int.tryParse(_duration.text) ?? 7) * 2,
-        unit: 'tablets',
+        unit: _selectedForm == 'syrup' ? 'ml' : 'tablets',
         frequency: _frequency.text.trim().isEmpty ? 'As directed' : _frequency.text.trim(),
         durationDays: int.tryParse(_duration.text) ?? 7,
         instructions: _instructions.text.trim().isEmpty ? 'As directed' : _instructions.text.trim(),
@@ -52,47 +52,103 @@ class _PrescriptionItemFormState extends State<PrescriptionItemForm> {
     _frequency.clear();
     _instructions.clear();
     _duration.text = '7';
-    setState(() {});
+    setState(() => _isExpanded = false);
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+
+    if (!_isExpanded) {
+      return OutlinedButton.icon(
+        onPressed: () => setState(() => _isExpanded = true),
+        icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+        label: const Text('Add Additional Medication'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: colors.clinicianAccent,
+          side: BorderSide(color: colors.clinicianAccent.withValues(alpha: 0.4)),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colors.surfaceSubtle,
-        borderRadius: BorderRadius.circular(AppRadii.sm),
-        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.clinicianAccent.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(flex: 2, child: _field('Medication', _name)),
+              Icon(Icons.medication_liquid_outlined, size: 18, color: colors.clinicianAccent),
               const SizedBox(width: 8),
-              Expanded(child: _field('Strength', _strength)),
+              Text(
+                'New Medication Item',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                visualDensity: VisualDensity.compact,
+                color: colors.textSecondary,
+                onPressed: () => setState(() => _isExpanded = false),
+              ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _field('Frequency', _frequency)),
+              Expanded(flex: 3, child: _field('Medication Name', _name, hint: 'e.g. Paracetamol')),
               const SizedBox(width: 8),
-              Expanded(child: _field('Days', _duration, numeric: true)),
+              Expanded(flex: 2, child: _field('Strength', _strength, hint: 'e.g. 500mg')),
             ],
           ),
-          const SizedBox(height: 8),
-          _field('Instructions', _instructions),
           const SizedBox(height: 10),
-          SecondaryButton(label: 'Add Medication', icon: Icons.add, onPressed: _add, fullWidth: false),
+          Row(
+            children: [
+              Expanded(flex: 3, child: _field('Frequency', _frequency, hint: 'e.g. TDS / 3x daily')),
+              const SizedBox(width: 8),
+              Expanded(flex: 2, child: _field('Duration (Days)', _duration, numeric: true)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _field('Instructions & Notes', _instructions, hint: 'e.g. Take after meals with water'),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => setState(() => _isExpanded = false),
+                child: Text('Cancel', style: TextStyle(color: colors.textSecondary)),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: _add,
+                icon: const Icon(Icons.check_rounded, size: 16),
+                label: const Text('Add to Prescription'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: colors.clinicianAccent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _field(String label, TextEditingController controller, {bool numeric = false}) {
+  Widget _field(String label, TextEditingController controller, {bool numeric = false, String? hint}) {
     return TextField(
       controller: controller,
       keyboardType: numeric ? TextInputType.number : TextInputType.text,
@@ -100,9 +156,11 @@ class _PrescriptionItemFormState extends State<PrescriptionItemForm> {
       decoration: InputDecoration(
         isDense: true,
         labelText: label,
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 11),
         labelStyle: const TextStyle(fontSize: 11),
-        border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
     );
   }

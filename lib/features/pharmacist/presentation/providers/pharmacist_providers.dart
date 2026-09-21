@@ -74,7 +74,9 @@ final realtimePrescriptionsStreamProvider = StreamProvider.autoDispose<List<Pres
   return ref.watch(supabasePharmacistDataSourceProvider).watchPrescriptions();
 });
 
-/// Supabase Realtime stream of hardware IoT temperature scans
+/// Stream of the latest **unassigned** IoT temperature scan (patient_id IS NULL).
+/// Only unclaimed scans are surfaced so the clinic assistant can explicitly
+/// link one to a specific patient — preventing cross-patient contamination.
 final latestTemperatureLogProvider = StreamProvider.autoDispose<Map<String, dynamic>?>((ref) {
   if (Env.isMockMode) {
     // Simulated stream for mock mode
@@ -94,7 +96,7 @@ final latestTemperatureLogProvider = StreamProvider.autoDispose<Map<String, dyna
       }
     })();
   }
-  return ref.watch(supabasePharmacistDataSourceProvider).watchLatestTemperatureLog();
+  return ref.watch(supabasePharmacistDataSourceProvider).watchUnassignedTemperatureScans();
 });
 
 final realtimeQueueStreamProvider = StreamProvider.autoDispose<int>((ref) async* {
@@ -106,6 +108,7 @@ final realtimeQueueStreamProvider = StreamProvider.autoDispose<int>((ref) async*
 });
 
 final consultationProvider = FutureProvider.family<Consultation?, String>((ref, consultationId) async {
+  ref.watch(appointmentsRevisionProvider);
   if (Env.isMockMode) {
     final db = ref.watch(mockDatabaseProvider);
     return db.consultations.where((c) => c.id == consultationId).firstOrNull;
@@ -113,12 +116,24 @@ final consultationProvider = FutureProvider.family<Consultation?, String>((ref, 
   final client = ref.watch(supabaseClientProvider);
   final res = await client.from('consultations').select().eq('id', consultationId).maybeSingle();
   if (res == null) return null;
+
+  final appointmentId = res['appointment_id'] as String;
+  final tempRes = await client
+      .from('temperature_logs')
+      .select('temperature')
+      .eq('appointment_id', appointmentId)
+      .order('created_at', ascending: false)
+      .limit(1)
+      .maybeSingle();
+  final temp = (tempRes?['temperature'] as num?)?.toDouble();
+
   return Consultation(
     id: res['id'] as String,
-    appointmentId: res['appointment_id'] as String,
+    appointmentId: appointmentId,
     patientId: res['patient_id'] as String,
     doctorId: res['doctor_id'] as String,
     status: (res['status'] as String) == 'in_progress' ? ConsultationStatus.inProgress : ConsultationStatus.completed,
+    vitals: ConsultationVitals(temperatureCelsius: temp),
     notes: res['notes'] as String?,
     diagnosis: res['diagnosis'] as String?,
     recommendations: res['recommendations'] as String?,
@@ -134,12 +149,23 @@ final consultationForAppointmentProvider = FutureProvider.family<Consultation?, 
   final client = ref.watch(supabaseClientProvider);
   final res = await client.from('consultations').select().eq('appointment_id', appointmentId).maybeSingle();
   if (res == null) return null;
+
+  final tempRes = await client
+      .from('temperature_logs')
+      .select('temperature')
+      .eq('appointment_id', appointmentId)
+      .order('created_at', ascending: false)
+      .limit(1)
+      .maybeSingle();
+  final temp = (tempRes?['temperature'] as num?)?.toDouble();
+
   return Consultation(
     id: res['id'] as String,
     appointmentId: res['appointment_id'] as String,
     patientId: res['patient_id'] as String,
     doctorId: res['doctor_id'] as String,
     status: (res['status'] as String) == 'in_progress' ? ConsultationStatus.inProgress : ConsultationStatus.completed,
+    vitals: ConsultationVitals(temperatureCelsius: temp),
     notes: res['notes'] as String?,
     diagnosis: res['diagnosis'] as String?,
     recommendations: res['recommendations'] as String?,

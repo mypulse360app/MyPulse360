@@ -38,4 +38,17 @@ class PharmacistRepositoryImpl implements PharmacistRepository {
       temperatureLogId: temperatureLogId,
     );
   }
+
+  @override
+  Future<String> getOrCreateConsultation({
+    required String appointmentId,
+    required String patientId,
+    required String doctorId,
+  }) {
+    return _dataSource.getOrCreateConsultation(
+      appointmentId: appointmentId,
+      patientId: patientId,
+      doctorId: doctorId,
+    );
+  }
 }

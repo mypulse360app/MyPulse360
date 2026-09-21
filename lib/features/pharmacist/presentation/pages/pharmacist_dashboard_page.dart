@@ -13,7 +13,6 @@ import '../../../../shared/utils/date_formatters.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/pharmacist_providers.dart';
 import '../widgets/add_patient_dialog.dart';
-import '../widgets/temperature_input_dialog.dart';
 import '../../../appointments/presentation/providers/appointments_providers.dart';
 import '../../../appointments/domain/entities/appointment.dart';
 import '../../../prescriptions/domain/entities/prescription.dart';
@@ -41,7 +40,6 @@ class PharmacistDashboardPage extends ConsumerWidget {
     final List<Appointment> appointments = ref.watch(realtimeAppointmentsStreamProvider).valueOrNull ??
         ref.watch(pharmacistTodaysAppointmentsProvider);
     final liveConsultations = ref.watch(realtimeConsultationsStreamProvider).valueOrNull;
-    final latestScan = ref.watch(latestTemperatureLogProvider).valueOrNull;
     
     final isDesktop = MediaQuery.of(context).size.width >= AppConstants.desktopBreakpoint;
 
@@ -235,69 +233,75 @@ class PharmacistDashboardPage extends ConsumerWidget {
                     
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12.0),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardTheme.color,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: colors.border),
-                        ),
-                        child: Row(
-                          children: [
-                            AvatarWidget(name: name, size: 40, color: colors.clinicianAccent),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(8),
+                      child: InkWell(
+                        onTap: () async {
+                          final currentConsultation = liveConsultations?.where((c) => c.appointmentId == appt.id).firstOrNull ??
+                              ref.read(consultationForAppointmentProvider(appt.id)).valueOrNull;
+                          String consultationId;
+                          if (currentConsultation != null) {
+                            consultationId = currentConsultation.id;
+                          } else {
+                            consultationId = await ref.read(pharmacistRepositoryProvider).getOrCreateConsultation(
+                              appointmentId: appt.id,
+                              patientId: appt.patientId,
+                              doctorId: appt.doctorId,
+                            );
+                          }
+                          if (context.mounted) {
+                            context.push(RoutePaths.processPrescription(consultationId));
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardTheme.color,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: colors.border),
+                          ),
+                          child: Row(
+                            children: [
+                              AvatarWidget(name: name, size: 40, color: colors.clinicianAccent),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            appt.status == AppointmentStatus.completed ? 'Completed' : 'Checked-in',
+                                            style: const TextStyle(fontSize: 10, color: Colors.white70),
+                                          ),
                                         ),
-                                        child: Text(
-                                          appt.status == AppointmentStatus.completed ? 'Completed' : 'Checked-in',
-                                          style: const TextStyle(fontSize: 10, color: Colors.white70),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${DateFormatters.time(appt.scheduledAt)} · ${appt.appointmentType}',
-                                    style: TextStyle(fontSize: 13, color: colors.textSecondary),
-                                  ),
-                                ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${DateFormatters.time(appt.scheduledAt)} · ${appt.appointmentType}',
+                                      style: TextStyle(fontSize: 13, color: colors.textSecondary),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            InkWell(
-                              onTap: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (_) => TemperatureInputDialog(
-                                    appointment: appt,
-                                    patientName: name,
-                                  ),
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(20),
-                              child: Container(
+                              Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 decoration: BoxDecoration(
                                   color: temp != null
                                       ? colors.danger.withValues(alpha: 0.1)
-                                      : (latestScan != null
-                                          ? Colors.amber.withValues(alpha: 0.12)
-                                          : Colors.transparent),
+                                      : colors.clinicianAccent.withValues(alpha: 0.1),
                                   border: Border.all(
                                     color: temp != null
                                         ? colors.danger
-                                        : (latestScan != null ? Colors.amber : colors.border),
+                                        : colors.clinicianAccent.withValues(alpha: 0.4),
                                   ),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -305,32 +309,30 @@ class PharmacistDashboardPage extends ConsumerWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
-                                      Icons.thermostat,
+                                      temp != null ? Icons.thermostat : Icons.assignment_outlined,
                                       size: 16,
                                       color: temp != null
                                           ? colors.danger
-                                          : (latestScan != null ? Colors.amber : colors.clinicianAccent),
+                                          : colors.clinicianAccent,
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
                                       temp != null
                                           ? '${temp.toStringAsFixed(1)} °C'
-                                          : (latestScan != null
-                                              ? '${latestScan['temperature']} °C (Scan)'
-                                              : 'Log Vitals'),
+                                          : 'Log Vitals & Rx',
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
                                         color: temp != null
                                             ? colors.danger
-                                            : (latestScan != null ? Colors.amber : colors.clinicianAccent),
+                                            : colors.clinicianAccent,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     );

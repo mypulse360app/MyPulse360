@@ -84,12 +84,13 @@ class _TemperatureInputDialogState extends ConsumerState<TemperatureInputDialog>
             builder: (context, ref, child) {
               final tempScan = ref.watch(latestTemperatureLogProvider).valueOrNull;
               
-              // Accept scans from the last 2 minutes or any new scan after dialog opened
+              // Accept only recent *unassigned* scans (the provider already
+              // filters for patient_id IS NULL).
               if (tempScan != null) {
                 final scanTime = tempScan['created_at'] as DateTime?;
                 final cutoff = _openedAt.subtract(const Duration(minutes: 2));
                 if (scanTime != null && scanTime.isAfter(cutoff)) {
-                  // Recent scan detected — always update
+                  // Recent unassigned scan detected — auto-populate
                   if (_detectedScan == null || _detectedScan!['created_at'] != scanTime) {
                     _detectedScan = tempScan;
                     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -119,7 +120,7 @@ class _TemperatureInputDialogState extends ConsumerState<TemperatureInputDialog>
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Scanner detected: ${_detectedScan!['temperature']} °C from ${_detectedScan!['device']}',
+                              'Scanner detected: ${_detectedScan!['temperature']} °C from ${_detectedScan!['device']} — for ${widget.patientName}',
                               style: TextStyle(color: colors.success, fontWeight: FontWeight.w600),
                             ),
                           ),

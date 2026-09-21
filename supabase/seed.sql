@@ -6,13 +6,13 @@ insert into public.clinics (id, name, address, phone) values
 on conflict (id) do nothing;
 
 -- 2. Base User Profiles
-insert into public.profiles (id, email, full_name, role, clinic_id, phone) values
-  ('d01', 'ahmed.rashid@mypulse360.test',  'Dr. Ahmed Rashid',   'doctor',    'c01', '+1 555-0111'),
-  ('d02', 'lina.fernandez@mypulse360.test','Dr. Lina Fernandez', 'doctor',    'c01', '+1 555-0112'),
-  ('ph01','nur.hakim@mypulse360.test',     'Nur Hakim',          'pharmacist','c01', '+1 555-0131'),
-  ('p01', 'aisha.rahman@mypulse360.test',  'Aisha Rahman',       'patient',   'c01', '+1 555-0141'),
-  ('p02', 'daniel.okafor@mypulse360.test', 'Daniel Okafor',      'patient',   'c01', '+1 555-0142')
-on conflict (id) do nothing;
+insert into public.profiles (id, email, full_name, role, clinic_id, phone, display_id) values
+  ('d01', 'ahmed.rashid@mypulse360.test',  'Dr. Ahmed Rashid',   'doctor',     'c01', '+1 555-0111', 'D1'),
+  ('d02', 'lina.fernandez@mypulse360.test','Dr. Lina Fernandez', 'doctor',     'c01', '+1 555-0112', 'D2'),
+  ('ca01','nur.hakim@mypulse360.test',     'Nur Hakim',          'pharmacist', 'c01', '+1 555-0131', 'CA1'),
+  ('p01', 'aisha.rahman@mypulse360.test',  'Aisha Rahman',       'patient',    'c01', '+1 555-0141', 'P1'),
+  ('p02', 'daniel.okafor@mypulse360.test', 'Daniel Okafor',      'patient',    'c01', '+1 555-0142', 'P2')
+on conflict (id) do update set display_id = excluded.display_id;
 
 -- 3. Doctor Profiles
 insert into public.doctor_profiles (id, license_number, specialization, clinic_id, bio, average_rating) values

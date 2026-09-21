@@ -10,7 +10,6 @@ import '../../../../shared/presentation/widgets/async_section.dart';
 import '../../../../shared/presentation/widgets/avatar_widget.dart';
 import '../../../../shared/presentation/widgets/empty_state_view.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
-import '../../../doctor/domain/entities/consultation.dart';
 import '../../../doctor/presentation/providers/doctor_providers.dart';
 import '../../domain/entities/appointment.dart';
 import '../pages/book_appointment_page.dart';
@@ -233,86 +232,6 @@ class _QueueStatusViewState extends ConsumerState<QueueStatusView> {
                 );
               }
 
-              final consultations = ref.watch(patientHistoryProvider(user.id));
-              Consultation? currentConsultation;
-              for (final c in consultations) {
-                if (c.appointmentId == appointment.id) {
-                  currentConsultation = c;
-                  break;
-                }
-              }
-
-              final temp = currentConsultation?.vitals.temperatureCelsius;
-              Widget? tempCard;
-              if (temp != null) {
-                tempCard = Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(top: 14),
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(32),
-                    gradient: RadialGradient(
-                      center: Alignment.topLeft,
-                      radius: 2.0,
-                      colors: [
-                        colors.danger,
-                        colors.danger.withValues(alpha: 0.6),
-                        const Color(0xFF101015),
-                      ],
-                      stops: const [0.0, 0.5, 1.0],
-                    ),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colors.danger.withValues(alpha: 0.25),
-                        blurRadius: 30,
-                        spreadRadius: -10,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'BODY TEMPERATURE',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.6,
-                          color: Colors.white.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            temp.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontSize: 54,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -1.5,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '°C',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white.withValues(alpha: 0.7),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              }
-
               return Column(
                 children: [
                   card
@@ -322,7 +241,6 @@ class _QueueStatusViewState extends ConsumerState<QueueStatusView> {
                         begin: const Offset(0.94, 0.94),
                         curve: Curves.easeOutBack,
                       ),
-                  ?tempCard,
                   if (!widget.compact && !isDone) ...[
                     const SizedBox(height: 14),
                     Container(

@@ -100,4 +100,26 @@ class MockPharmacistDataSource implements PharmacistDataSource {
     _db.upsertConsultation(updated);
     return updated.id;
   }
+
+  @override
+  Future<String> getOrCreateConsultation({
+    required String appointmentId,
+    required String patientId,
+    required String doctorId,
+  }) async {
+    for (final c in _db.consultations) {
+      if (c.appointmentId == appointmentId) {
+        return c.id;
+      }
+    }
+    final newConsultation = Consultation(
+      id: generateId(),
+      appointmentId: appointmentId,
+      patientId: patientId,
+      doctorId: doctorId,
+      status: ConsultationStatus.inProgress,
+    );
+    _db.upsertConsultation(newConsultation);
+    return newConsultation.id;
+  }
 }
