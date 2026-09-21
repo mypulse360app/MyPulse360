@@ -81,6 +81,23 @@ class MockDatabase {
               weightKg: 78.5,
             ),
           ),
+          const Consultation(
+            id: 'consultation-sarah-morning',
+            appointmentId: 'appt-sarah-morning-test',
+            patientId: MockIds.sarahPatientId,
+            doctorId: MockIds.drAhmedDoctorId,
+            status: ConsultationStatus.completed,
+            diagnosis: 'Mild seasonal allergies',
+            notes: 'Patient reported minor congestion and sneezing. Prescribed antihistamines.',
+            recommendations: 'Avoid outdoor allergens, use air purifier.',
+            vitals: ConsultationVitals(
+              temperatureCelsius: 36.6,
+              systolicBp: 110,
+              diastolicBp: 70,
+              heartRate: 68,
+              weightKg: 60.5,
+            ),
+          ),
         ],
         credentials = CredentialsStore() {
     seedDemoCredentials(credentials, users);

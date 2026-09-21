@@ -13,6 +13,7 @@ import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../doctor/domain/entities/consultation.dart';
 import '../../../doctor/presentation/providers/doctor_providers.dart';
 import '../../domain/entities/appointment.dart';
+import '../pages/book_appointment_page.dart';
 import '../providers/appointments_providers.dart';
 
 /// Live-feeling queue tracker: position, estimated wait, and progress for
@@ -71,13 +72,17 @@ class _QueueStatusViewState extends ConsumerState<QueueStatusView> {
           );
 
           if (todaysMatches.isEmpty) {
-            return widget.fallback ?? const Padding(
-              padding: EdgeInsets.only(top: 60),
+            return widget.fallback ?? Padding(
+              padding: const EdgeInsets.only(top: 60),
               child: EmptyStateView(
                 title: 'No visit today',
                 message:
-                    "You'll see your live queue number here once you have an appointment today.",
+                    'You have no appointment booked today. Do you want to book an appointment??',
                 icon: Icons.confirmation_number_outlined,
+                actionLabel: 'Yes, Book Appointment',
+                onAction: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const BookAppointmentPage()),
+                ),
               ),
             );
           }

@@ -15,5 +15,11 @@ abstract class PharmacistDataSource {
 
   List<Appointment> getTodaysAppointments();
 
-  Future<String> logTemperature(String appointmentId, String patientId, String doctorId, double temperature);
+  Future<String> logTemperature(
+    String appointmentId,
+    String patientId,
+    String doctorId,
+    double temperature, {
+    String? temperatureLogId,
+  });
 }

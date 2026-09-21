@@ -42,11 +42,20 @@ class _AppointmentsListPageState extends ConsumerState<AppointmentsListPage> {
         title: 'Appointments',
         showBack: false,
         actions: [
-          IconButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const BookAppointmentPage()),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: FilledButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const BookAppointmentPage()),
+              ),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Book Now'),
+              style: FilledButton.styleFrom(
+                backgroundColor: colors.patientAccent,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
             ),
-            icon: const Icon(Icons.add_circle_outline),
           ),
         ],
       ),

@@ -22,6 +22,19 @@ List<Appointment> seedAppointments() {
       reasonForVisit: 'Regular checkup',
       roomLabel: 'Room 2',
     ),
+    // Sarah's test morning appointment (Completed)
+    Appointment(
+      id: 'appt-sarah-morning-test',
+      patientId: MockIds.sarahPatientId,
+      doctorId: MockIds.drAhmedDoctorId,
+      clinicId: MockIds.defaultClinicId,
+      scheduledAt: at(0, 9, 30),
+      durationMinutes: 30,
+      appointmentType: 'General Checkup',
+      status: AppointmentStatus.completed,
+      reasonForVisit: 'Morning checkup',
+      roomLabel: 'Room 2',
+    ),
     // Dr. Ahmed's queue today.
     Appointment(
       id: 'appt-today-1',

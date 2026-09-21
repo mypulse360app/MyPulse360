@@ -37,8 +37,9 @@ class SupabasePharmacistDataSource implements PharmacistDataSource {
     String appointmentId,
     String patientId,
     String doctorId,
-    double temperature,
-  ) async {
+    double temperature, {
+    String? temperatureLogId,
+  }) async {
     // 1. Check if consultation exists for this appointment
     final res = await _client
         .from('consultations')
@@ -64,6 +65,23 @@ class SupabasePharmacistDataSource implements PharmacistDataSource {
         'notes': 'Vitals logged: Temp ${temperature.toStringAsFixed(1)} °C',
       }).select('id').single();
       consultationId = inserted['id'] as String;
+    }
+
+    // 2. Link or Create the temperature log
+    if (temperatureLogId != null) {
+      await _client.from('temperature_logs').update({
+        'patient_id': patientId,
+        'appointment_id': appointmentId,
+        'status': temperature > 37.5 ? 'fever' : 'normal',
+      }).eq('id', temperatureLogId);
+    } else {
+      await _client.from('temperature_logs').insert({
+        'patient_id': patientId,
+        'appointment_id': appointmentId,
+        'temperature': temperature,
+        'device': 'Manual Entry',
+        'status': temperature > 37.5 ? 'fever' : 'normal',
+      });
     }
 
     return consultationId;

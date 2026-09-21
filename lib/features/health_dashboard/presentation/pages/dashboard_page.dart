@@ -16,6 +16,8 @@ import '../../../appointments/presentation/providers/appointments_providers.dart
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../patient/presentation/providers/patient_providers.dart';
 import '../../../appointments/presentation/widgets/queue_status_view.dart';
+import '../../../health_tips/data/health_tips_data.dart';
+import '../../../health_tips/presentation/widgets/health_tip_card.dart';
 import '../widgets/next_appointment_banner.dart';
 import '../widgets/wellness_goal_row.dart';
 
@@ -148,7 +150,23 @@ class DashboardPage extends ConsumerWidget {
                             ),
                           ),
                         ),
-                      ) : null,
+                      ) : Padding(
+                        padding: const EdgeInsets.only(top: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Daily Health Tip',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 10),
+                            HealthTipCard(
+                              tip: kHealthTips[now.day % kHealthTips.length],
+                              width: double.infinity,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                     // If QueueStatusView isn't falling back to NextAppointmentBanner
                     // (i.e. they do have a visit today), we still want to show the

@@ -99,5 +99,29 @@ List<Prescription> seedPrescriptions() {
         ),
       ],
     ),
+    Prescription(
+      id: 'rx-sarah-morning',
+      patientId: MockIds.sarahPatientId,
+      doctorId: MockIds.drAhmedDoctorId,
+      consultationId: 'consultation-sarah-morning',
+      issuedDate: now,
+      expiryDate: now.add(const Duration(days: 30)),
+      status: PrescriptionStatus.active,
+      source: PrescriptionSource.inApp,
+      items: const [
+        PrescriptionItem(
+          id: 'rx-item-loratadine',
+          medicationName: 'Loratadine',
+          strength: '10mg',
+          form: 'tablet',
+          quantity: 30,
+          unit: 'tablets',
+          frequency: 'Once daily',
+          durationDays: 30,
+          instructions: 'Take as needed for allergies',
+          refillsAllowed: 0,
+        ),
+      ],
+    ),
   ];
 }

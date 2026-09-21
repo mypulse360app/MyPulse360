@@ -58,7 +58,13 @@ class MockPharmacistDataSource implements PharmacistDataSource {
   }
 
   @override
-  Future<String> logTemperature(String appointmentId, String patientId, String doctorId, double temperature) async {
+  Future<String> logTemperature(
+    String appointmentId,
+    String patientId,
+    String doctorId,
+    double temperature, {
+    String? temperatureLogId,
+  }) async {
     Consultation? existing;
     for (final c in _db.consultations) {
       if (c.appointmentId == appointmentId) {

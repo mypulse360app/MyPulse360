@@ -78,9 +78,6 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _takePhoto(fromGallery: false);
-    });
   }
 
   @override
@@ -507,11 +504,6 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextField(
-                      controller: _prescriberController,
-                      decoration: const InputDecoration(labelText: 'Prescriber / Clinic (optional)', isDense: true),
-                    ),
-                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(child: _dateField(context, colors, 'Issued', _issuedDate, (d) {

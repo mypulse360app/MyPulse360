@@ -30,7 +30,7 @@ class PrimaryButton extends StatelessWidget {
         backgroundColor: bg,
         foregroundColor: Colors.white,
         disabledBackgroundColor: bg.withValues(alpha: 0.5),
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.sm),
         ),

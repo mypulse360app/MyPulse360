@@ -54,6 +54,7 @@ class _TemperatureInputDialogState extends ConsumerState<TemperatureInputDialog>
       widget.appointment.patientId,
       widget.appointment.doctorId,
       temp,
+      temperatureLogId: _detectedScan?['id']?.toString(),
     );
     
     ref.read(appointmentsRevisionProvider.notifier).state++;
