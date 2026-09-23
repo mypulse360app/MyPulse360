@@ -10,7 +10,6 @@ import '../../../../shared/presentation/widgets/async_section.dart';
 import '../../../../shared/presentation/widgets/avatar_widget.dart';
 import '../../../../shared/presentation/widgets/large_title_app_bar.dart';
 import '../../../../shared/presentation/widgets/primary_button.dart';
-import '../../../../shared/presentation/widgets/secondary_button.dart';
 import '../../../../shared/presentation/widgets/status_badge.dart';
 import '../../../../shared/utils/date_formatters.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
@@ -50,11 +49,11 @@ class AppointmentDetailPage extends ConsumerWidget {
   final String appointmentId;
 
   StatusTone _tone(AppointmentStatus status) => switch (status) {
-    AppointmentStatus.pending => StatusTone.neutral,
+    AppointmentStatus.pending => StatusTone.success,
     AppointmentStatus.confirmed => StatusTone.success,
     AppointmentStatus.completed => StatusTone.info,
     AppointmentStatus.cancelled => StatusTone.danger,
-    AppointmentStatus.scheduled => StatusTone.neutral,
+    AppointmentStatus.scheduled => StatusTone.success,
     AppointmentStatus.inProgress => StatusTone.warning,
     AppointmentStatus.rescheduled => StatusTone.warning,
   };
@@ -233,7 +232,7 @@ class AppointmentDetailPage extends ConsumerWidget {
                 const SizedBox(height: 20),
                 PrimaryButton(
                   label: 'Reschedule',
-                  onPressed: () => Navigator.of(context).push(
+                  onPressed: () => Navigator.of(context, rootNavigator: true).push(
                     MaterialPageRoute(
                       builder: (_) => ReschedulePage(appointment: appointment),
                     ),
@@ -288,9 +287,11 @@ class _CancelAppointmentButtonState
 
   @override
   Widget build(BuildContext context) {
-    return SecondaryButton(
+    final colors = context.colors;
+    return PrimaryButton(
       label: _cancelling ? 'Cancelling…' : 'Cancel Appointment',
       onPressed: _cancelling ? null : _cancel,
+      color: colors.danger,
     );
   }
 }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../../config/router/role_nav_config.dart';
 import '../../../../config/router/route_paths.dart';
-import '../../../../config/theme/app_colors.dart';
 import '../../../patient/domain/entities/patient_profile.dart';
 import '../../../patient/presentation/providers/patient_providers.dart';
 import '../providers/auth_providers.dart';
@@ -95,51 +95,16 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment(-0.6, -1),
-            end: Alignment(0.6, 1),
-            colors: [AppColors.primaryGreen, AppColors.teal],
-          ),
-        ),
+      body: Container(
+        color: Colors.white,
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(
-                  Icons.monitor_heart_outlined,
-                  color: Colors.white,
-                  size: 36,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'MyPulse360',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Your health journey, in your pocket',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
+          child: Image.asset(
+            'assets/images/logo.png',
+            width: 250,
+          )
+          .animate()
+          .fadeIn(duration: 400.ms, curve: Curves.easeOut)
+          .scaleXY(begin: 0.9, end: 1.0, duration: 400.ms, curve: Curves.easeOutBack),
         ),
       ),
     );

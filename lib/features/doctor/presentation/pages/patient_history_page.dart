@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../config/router/route_paths.dart';
 import '../../../../config/theme/app_theme.dart';
 import '../../../../shared/presentation/widgets/allergy_banner.dart';
 import '../../../../shared/presentation/widgets/app_card.dart';
@@ -98,10 +100,14 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
       ref.read(prescriptionsRevisionProvider.notifier).state++;
     }
 
+    await ref.read(appointmentsRepositoryProvider).updateStatus(appointmentId, AppointmentStatus.completed);
+
     ref.read(appointmentsRevisionProvider.notifier).state++;
     if (!mounted) return;
     setState(() => _marking = false);
-    Navigator.of(context).pop();
+    
+    // Instead of pop (which might just go back in shell), explicitly go to dashboard
+    context.go(RoutePaths.doctorDashboard);
   }
 
   @override
@@ -158,10 +164,13 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
         value: profileAsync,
         data: (profile) {
           final age = profile?.age;
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-            children: [
-              AppCard(
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                children: [
+                  AppCard(
                 child: Row(
                   children: [
                     AvatarWidget(
@@ -386,15 +395,25 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
                   const SizedBox(height: 10),
                 ],
             ],
-          );
-        },
-      ),
+          ),
+        ),
+      );
+    },
+  ),
       bottomNavigationBar: pendingAppointment == null || doctor == null
           ? null
-          : StickySubmitBar(
-              label: 'Send to Pharmacy',
-              onSubmit: () => _markAsSeen(pendingAppointment!.id, doctor.id),
-              loading: _marking,
+          : SafeArea(
+              child: Center(
+                heightFactor: 1.0,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: StickySubmitBar(
+                    label: 'Send to Pharmacy',
+                    onSubmit: () => _markAsSeen(pendingAppointment!.id, doctor.id),
+                    loading: _marking,
+                  ),
+                ),
+              ),
             ),
     );
   }

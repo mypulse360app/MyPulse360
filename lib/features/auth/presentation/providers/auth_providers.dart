@@ -192,6 +192,25 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
+  /// Updates the user's name in local state
+  Future<void> updateName(String newName) async {
+    final current = state;
+    if (current is! AuthAuthenticated) return;
+    final updated = AppUser(
+       id: current.user.id,
+       email: current.user.email,
+       fullName: newName,
+       role: current.user.role,
+       clinicId: current.user.clinicId,
+       phone: current.user.phone,
+       avatarUrl: current.user.avatarUrl,
+       displayId: current.user.displayId,
+       isActive: current.user.isActive,
+       mustChangePassword: current.user.mustChangePassword,
+    );
+    state = AuthAuthenticated(updated);
+  }
+
   Future<void> logout() async {
     await LogoutUseCase(ref.read(authRepositoryProvider)).call();
     if (Env.isMockMode) {

@@ -249,13 +249,19 @@ ChatReply generateChatReply({
       text: 'I can help you navigate to your settings and profile page.',
       actionType: 'open_settings',
     );
-  } else {
+  } else if (lower.contains('health') && (lower.contains('tip') || lower.contains('advice'))) {
     return const ChatReply(
-      text:
-          "I can help with questions about your appointments, medications, or general symptoms. "
-          'You can also ask me to change settings, like "Turn on dark mode". '
-          'What would you like to know?',
-      quickReplies: ['When is my next appointment?', 'Turn on dark mode', 'Open settings'],
+      text: 'Here is a daily health tip: Make time to breathe. Five minutes of slow breathing can meaningfully lower stress and blood pressure.',
+    );
+  } else if (text.trim().endsWith('?')) {
+    return ChatReply(
+      text: 'That is a great question. Regarding "${text.replaceAll('?', '').trim()}", I recommend discussing this with your doctor for the best medical advice. Would you like to book an appointment?',
+      quickReplies: const ['Book an appointment', 'No thanks'],
+    );
+  } else {
+    return ChatReply(
+      text: 'I hear what you are saying about "$text". I can help with questions about your appointments, medications, or general symptoms. What would you like to do?',
+      quickReplies: const ['When is my next appointment?', 'Turn on dark mode', 'Open settings'],
     );
   }
 }

@@ -79,20 +79,6 @@ class DashboardPage extends ConsumerWidget {
                     ],
                   ),
                 ),
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: colors.border),
-                  ),
-                  child: Icon(
-                    Icons.notifications_rounded,
-                    size: 20,
-                    color: colors.textPrimary,
-                  ),
-                ),
               ].animate().fadeIn(duration: 600.ms, curve: AppleSpringCurve()).slideY(begin: 0.2),
             ),
             const SizedBox(height: 20),
@@ -106,7 +92,7 @@ class DashboardPage extends ConsumerWidget {
                     title: 'Book\nAppointments',
                     subtitle: 'Schedule your next visit',
                     background: const Color(0xFF5B17B1), // Vibrant Purple
-                    onTap: () => Navigator.of(context).push(
+                    onTap: () => Navigator.of(context, rootNavigator: true).push(
                       MaterialPageRoute(
                         builder: (_) => const BookAppointmentPage(),
                       ),
@@ -145,7 +131,7 @@ class DashboardPage extends ConsumerWidget {
                           onViewDetails: () => context.push(
                             RoutePaths.appointmentDetail(nextAppointment.id),
                           ),
-                          onReschedule: () => Navigator.of(context).push(
+                          onReschedule: () => Navigator.of(context, rootNavigator: true).push(
                             MaterialPageRoute(
                               builder: (_) => ReschedulePage(appointment: nextAppointment),
                             ),
@@ -200,7 +186,7 @@ class DashboardPage extends ConsumerWidget {
                                 onViewDetails: () => context.push(
                                   RoutePaths.appointmentDetail(nextAppointment.id),
                                 ),
-                                onReschedule: () => Navigator.of(context).push(
+                                onReschedule: () => Navigator.of(context, rootNavigator: true).push(
                                   MaterialPageRoute(
                                     builder: (_) => ReschedulePage(appointment: nextAppointment),
                                   ),

@@ -46,12 +46,22 @@ const Map<UserRole, RoleNavConfig> kRoleNavConfig = {
         selectedIcon: Icons.beach_access_rounded,
         label: 'Take Leave',
       ),
+      NavItem(
+        icon: Icons.settings_outlined,
+        selectedIcon: Icons.settings_rounded,
+        label: 'Settings',
+      ),
     ],
   ),
   UserRole.pharmacist: RoleNavConfig(
     rootPath: RoutePaths.pharmacistDashboard,
     items: [
       NavItem(icon: Icons.groups_outlined, selectedIcon: Icons.groups_rounded, label: 'Queue'),
+      NavItem(
+        icon: Icons.settings_outlined,
+        selectedIcon: Icons.settings_rounded,
+        label: 'Settings',
+      ),
     ],
   ),
 };

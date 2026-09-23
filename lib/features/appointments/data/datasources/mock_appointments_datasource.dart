@@ -77,20 +77,17 @@ class MockAppointmentsDataSource implements AppointmentsDataSource {
           l.coversDate(date),
     );
 
-    final booked = _db.appointments
-        .where(
-          (a) =>
-              a.doctorId == doctorId &&
-              a.scheduledAt.year == date.year &&
-              a.scheduledAt.month == date.month &&
-              a.scheduledAt.day == date.day &&
-              a.status != AppointmentStatus.cancelled,
-        )
-        .map(
-          (a) =>
-              _SlotKey(hour: a.scheduledAt.hour, minute: a.scheduledAt.minute),
-        )
-        .toSet();
+    final bookedCounts = <_SlotKey, int>{};
+    for (final a in _db.appointments) {
+      if (a.doctorId == doctorId &&
+          a.scheduledAt.year == date.year &&
+          a.scheduledAt.month == date.month &&
+          a.scheduledAt.day == date.day &&
+          a.status != AppointmentStatus.cancelled) {
+        final key = _SlotKey(hour: a.scheduledAt.hour, minute: a.scheduledAt.minute);
+        bookedCounts[key] = (bookedCounts[key] ?? 0) + 1;
+      }
+    }
 
     final slots = <TimeSlot>[];
     final isPastDay = DateTime(
@@ -101,7 +98,7 @@ class MockAppointmentsDataSource implements AppointmentsDataSource {
     for (var hour = 9; hour < 17; hour++) {
       for (final minute in [0, 30]) {
         final dt = DateTime(date.year, date.month, date.day, hour, minute);
-        final isBooked = booked.contains(_SlotKey(hour: hour, minute: minute));
+        final isBooked = (bookedCounts[_SlotKey(hour: hour, minute: minute)] ?? 0) >= 4;
         final isPast = dt.isBefore(DateTime.now());
         slots.add(
           TimeSlot(

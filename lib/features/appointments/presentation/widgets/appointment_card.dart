@@ -15,11 +15,11 @@ class AppointmentCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   StatusTone get _tone => switch (appointment.status) {
-        AppointmentStatus.pending => StatusTone.neutral,
+        AppointmentStatus.pending => StatusTone.success,
         AppointmentStatus.confirmed => StatusTone.success,
         AppointmentStatus.completed => StatusTone.info,
         AppointmentStatus.cancelled => StatusTone.danger,
-        AppointmentStatus.scheduled => StatusTone.neutral,
+        AppointmentStatus.scheduled => StatusTone.success,
         AppointmentStatus.inProgress => StatusTone.warning,
         AppointmentStatus.rescheduled => StatusTone.warning,
       };

@@ -26,11 +26,20 @@ import '../widgets/patient_queue_tile.dart';
 /// banner, stat cards, a patient queue with a "Start Visit" CTA on the
 /// active patient, and a real alerts panel. Doctor's scope stays limited
 /// to patients / history / start visit — no extra sidebar sections.
-class DoctorDashboardPage extends ConsumerWidget {
+enum QueueFilter { all, confirmed, completed }
+
+class DoctorDashboardPage extends ConsumerStatefulWidget {
   const DoctorDashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DoctorDashboardPage> createState() => _DoctorDashboardPageState();
+}
+
+class _DoctorDashboardPageState extends ConsumerState<DoctorDashboardPage> {
+  QueueFilter _selectedFilter = QueueFilter.all;
+
+  @override
+  Widget build(BuildContext context) {
     final colors = context.colors;
     final user = ref.watch(currentUserProvider);
     if (user == null) return const SizedBox.shrink();
@@ -47,9 +56,6 @@ class DoctorDashboardPage extends ConsumerWidget {
             final confirmed = queue
                 .where((a) => a.status == AppointmentStatus.confirmed)
                 .length;
-            final pending = queue
-                .where((a) => a.status == AppointmentStatus.scheduled)
-                .length;
             final completed = queue
                 .where((a) => a.status == AppointmentStatus.completed)
                 .length;
@@ -59,11 +65,22 @@ class DoctorDashboardPage extends ConsumerWidget {
                       QueueStatus.forAppointment(a).label == 'Waiting 30+ min',
                 )
                 .toList();
-            final activeIndex = queue.indexWhere(
+
+            final filteredQueue = queue.where((a) {
+              if (_selectedFilter == QueueFilter.confirmed) {
+                return a.status == AppointmentStatus.confirmed;
+              }
+              if (_selectedFilter == QueueFilter.completed) {
+                return a.status == AppointmentStatus.completed;
+              }
+              return true;
+            }).toList();
+
+            final activeIndex = filteredQueue.indexWhere(
               (a) => a.status != AppointmentStatus.completed,
             );
             final activeRoom = activeIndex >= 0
-                ? queue[activeIndex].roomLabel
+                ? filteredQueue[activeIndex].roomLabel
                 : null;
 
             return ListView(
@@ -78,8 +95,10 @@ class DoctorDashboardPage extends ConsumerWidget {
                 _StatCardsRow(
                   patientsToday: queue.length,
                   confirmed: confirmed,
-                  pending: pending,
                   completed: completed,
+                  selectedFilter: _selectedFilter,
+                  onFilterChanged: (filter) =>
+                      setState(() => _selectedFilter = filter),
                 ),
                 const SizedBox(height: 22),
                 Text(
@@ -87,19 +106,19 @@ class DoctorDashboardPage extends ConsumerWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 10),
-                if (queue.isEmpty)
+                if (filteredQueue.isEmpty)
                   const Padding(
                     padding: EdgeInsets.only(top: 40),
                     child: EmptyStateView(
-                      title: 'No patients scheduled today',
-                      message: 'Enjoy the quiet — your queue will appear here.',
+                      title: 'No patients found',
+                      message: 'No patients match the selected filter.',
                       icon: Icons.event_available_outlined,
                     ),
                   )
                 else
-                  for (var i = 0; i < queue.length; i++) ...[
+                  for (var i = 0; i < filteredQueue.length; i++) ...[
                     _DoctorQueueRow(
-                          appointment: queue[i],
+                          appointment: filteredQueue[i],
                           isActive: i == activeIndex,
                         )
                         .animate()
@@ -238,58 +257,76 @@ class _StatCardsRow extends StatelessWidget {
   const _StatCardsRow({
     required this.patientsToday,
     required this.confirmed,
-    required this.pending,
     required this.completed,
+    required this.selectedFilter,
+    required this.onFilterChanged,
   });
 
   final int patientsToday;
   final int confirmed;
-  final int pending;
   final int completed;
+  final QueueFilter selectedFilter;
+  final ValueChanged<QueueFilter> onFilterChanged;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final stats = [
-      ('Patients today', patientsToday, colors.textPrimary),
-      ('Confirmed', confirmed, colors.success),
-      ('Pending', pending, colors.warningText),
-      ('Completed', completed, colors.textSecondary),
+      ('Patients today', patientsToday, colors.textPrimary, QueueFilter.all),
+      ('Confirmed', confirmed, colors.success, QueueFilter.confirmed),
+      ('Completed', completed, colors.textSecondary, QueueFilter.completed),
     ];
     return GridView.count(
-      crossAxisCount: 4,
+      crossAxisCount: 3,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 10,
       crossAxisSpacing: 10,
-      childAspectRatio: 0.95,
+      childAspectRatio: 1.2,
       children: [
-        for (final (label, value, color) in stats)
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.circular(AppRadii.card),
-              border: Border.all(color: colors.border),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '$value',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: color,
+        for (final (label, value, color, filter) in stats)
+          GestureDetector(
+            onTap: () => onFilterChanged(filter),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              decoration: BoxDecoration(
+                color: selectedFilter == filter
+                    ? color.withValues(alpha: 0.1)
+                    : Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(AppRadii.card),
+                border: Border.all(
+                  color: selectedFilter == filter ? color : colors.border,
+                  width: selectedFilter == filter ? 1.5 : 1,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '$value',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: color,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 10, color: colors.textSecondary),
-                ),
-              ],
+                  const SizedBox(height: 3),
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: selectedFilter == filter
+                          ? color
+                          : colors.textSecondary,
+                      fontWeight: selectedFilter == filter
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
       ],

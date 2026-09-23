@@ -27,10 +27,12 @@ abstract final class RoutePaths {
   static const String doctorStaffManagement = '/doctor/staff';
   static const String doctorApplyLeave = '/doctor/apply-leave';
   static const String doctorPatientHistory = '/doctor/patient-history/:patientId';
+  static const String doctorSettings = '/doctor/settings';
 
   // Pharmacist branch roots
   static const String pharmacistDashboard = '/pharmacist/dashboard';
   static const String pharmacistPrescriptions = '/pharmacist/prescriptions';
+  static const String pharmacistSettings = '/pharmacist/settings';
   static const String pharmacistVerify = '/pharmacist/verify/:prescriptionId';
   static const String pharmacistCreatePrescription = '/pharmacist/create-prescription/:consultationId';
   static const String pharmacistProcessPrescription = '/pharmacist/process-prescription/:consultationId';

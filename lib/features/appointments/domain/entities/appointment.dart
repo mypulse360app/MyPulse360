@@ -10,10 +10,10 @@ enum AppointmentStatus {
   rescheduled;
 
   String get label => switch (this) {
-        AppointmentStatus.pending => 'Pending',
-        AppointmentStatus.scheduled => 'Scheduled',
-        AppointmentStatus.confirmed => 'Confirmed',
-        AppointmentStatus.inProgress => 'In Progress',
+        AppointmentStatus.pending => 'Appointment Booked',
+        AppointmentStatus.scheduled => 'Appointment Booked',
+        AppointmentStatus.confirmed => 'Appointment Booked',
+        AppointmentStatus.inProgress => 'Doctor Visit Started',
         AppointmentStatus.completed => 'Completed',
         AppointmentStatus.cancelled => 'Cancelled',
         AppointmentStatus.rescheduled => 'Rescheduled',

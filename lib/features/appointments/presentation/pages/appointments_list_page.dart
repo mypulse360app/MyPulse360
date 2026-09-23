@@ -8,7 +8,6 @@ import '../../../../config/router/route_paths.dart';
 import '../../../../config/theme/app_theme.dart';
 import '../../../../shared/presentation/widgets/async_section.dart';
 import '../../../../shared/presentation/widgets/empty_state_view.dart';
-import '../../../../shared/presentation/widgets/large_title_app_bar.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/appointment.dart';
 import '../providers/appointments_providers.dart';
@@ -38,14 +37,18 @@ class _AppointmentsListPageState extends ConsumerState<AppointmentsListPage> {
     final appointmentsAsync = ref.watch(patientAppointmentsProvider(user.id));
 
     return Scaffold(
-      appBar: LargeTitleAppBar(
-        title: 'Appointments',
-        showBack: false,
+      appBar: AppBar(
+        title: const Text(
+          'Appointments',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: false,
+        automaticallyImplyLeading: false,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: FilledButton.icon(
-              onPressed: () => Navigator.of(context).push(
+              onPressed: () => Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(builder: (_) => const BookAppointmentPage()),
               ),
               icon: const Icon(Icons.add, size: 18),
@@ -77,14 +80,16 @@ class _AppointmentsListPageState extends ConsumerState<AppointmentsListPage> {
             children: [
               Expanded(
                 child: appointments.isEmpty
-                    ? EmptyStateView(
-                        title: 'No appointments yet',
-                        message: 'Book your first appointment to get started.',
-                        icon: Icons.calendar_month_outlined,
-                        actionLabel: 'Book Appointment',
-                        onAction: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const BookAppointmentPage(),
+                    ? Center(
+                        child: EmptyStateView(
+                          title: 'No appointments yet',
+                          message: 'Book your first appointment to get started.',
+                          icon: Icons.calendar_month_outlined,
+                          actionLabel: 'Book Appointment',
+                          onAction: () => Navigator.of(context, rootNavigator: true).push(
+                            MaterialPageRoute(
+                              builder: (_) => const BookAppointmentPage(),
+                            ),
                           ),
                         ),
                       )

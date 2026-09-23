@@ -46,18 +46,31 @@ class ClinicianAppShell extends StatelessWidget {
 
     final colors = context.colors;
     return Scaffold(
+      backgroundColor: colors.surfaceMuted,
       body: Row(
         children: [
-          Container(
-            width: 248,
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              border: Border(right: BorderSide(color: colors.border)),
-            ),
-            child: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
+            child: Container(
+              width: 260,
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(32),
+                child: SafeArea(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                     child: Row(
@@ -122,6 +135,8 @@ class ClinicianAppShell extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
           Expanded(
             child: ColoredBox(
               color: colors.surfaceMuted,
@@ -155,30 +170,52 @@ class _SidebarItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      child: Material(
-        color: selected ? accent.withValues(alpha: 0.1) : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                Icon(item.icon, size: 18, color: selected ? accent : colors.textSecondary),
-                const SizedBox(width: 10),
-                Text(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final bgColor = selected 
+        ? (isDark ? Colors.white : accent) 
+        : Colors.transparent;
+    final iconColor = selected 
+        ? (isDark ? Colors.black87 : Colors.white) 
+        : colors.textSecondary;
+    final textColor = selected 
+        ? (isDark ? Colors.black87 : Colors.white) 
+        : colors.textPrimary;
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(32),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                selected ? item.selectedIcon : item.icon, 
+                size: 22, 
+                color: iconColor,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
                   item.label,
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                    color: selected ? accent : colors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: textColor,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

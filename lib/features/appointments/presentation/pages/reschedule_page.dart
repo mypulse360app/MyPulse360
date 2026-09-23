@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../config/theme/app_theme.dart';
-import '../../../../shared/presentation/widgets/app_card.dart';
 import '../../../../shared/presentation/widgets/async_section.dart';
 import '../../../../shared/presentation/widgets/large_title_app_bar.dart';
 import '../../../../shared/presentation/widgets/primary_button.dart';
@@ -79,7 +78,7 @@ class _ReschedulePageState extends ConsumerState<ReschedulePage> {
     return Scaffold(
       appBar: const LargeTitleAppBar(title: 'Reschedule'),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -115,25 +114,23 @@ class _ReschedulePageState extends ConsumerState<ReschedulePage> {
                   return s.copyWith(isSelected: selected);
                 }).toList();
 
-                return AppCard(
-                  child: slots.every((s) => s.isDisabled)
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Text(
-                            slots.any((s) => s.isDoctorOnLeave)
-                                ? '${doctor?.fullName ?? 'Your doctor'} is on leave this day. Please choose another date.'
-                                : 'No slots available this day. Try another date.',
-                            style: TextStyle(
-                              color: colors.textSecondary,
-                              fontSize: 12,
-                            ),
+                return slots.every((s) => s.isDisabled)
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          slots.any((s) => s.isDoctorOnLeave)
+                              ? '${doctor?.fullName ?? 'Your doctor'} is on leave this day. Please choose another date.'
+                              : 'No slots available this day. Try another date.',
+                          style: TextStyle(
+                            color: colors.textSecondary,
+                            fontSize: 12,
                           ),
-                        )
-                      : TimeSlotGrid(
-                          slots: slots,
-                          onSelect: (s) => setState(() => _selectedSlot = s),
                         ),
-                );
+                      )
+                    : TimeSlotGrid(
+                        slots: slots,
+                        onSelect: (s) => setState(() => _selectedSlot = s),
+                      );
               },
             ),
             const SizedBox(height: 24),

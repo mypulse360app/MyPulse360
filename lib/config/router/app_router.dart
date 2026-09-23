@@ -35,6 +35,7 @@ import '../../features/prescriptions/presentation/pages/prescriptions_list_page.
 import '../../features/scheduling/presentation/pages/apply_leave_page.dart';
 import '../../shared/presentation/widgets/app_shell_scaffold.dart';
 import '../../shared/presentation/widgets/clinician_app_shell.dart';
+import '../../shared/presentation/pages/settings_page.dart';
 import '../theme/app_theme.dart';
 import 'role_nav_config.dart';
 import 'route_paths.dart';
@@ -208,19 +209,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      GoRoute(
-        path: RoutePaths.doctorPatientHistory,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: PatientHistoryPage(
-            patientId: state.pathParameters['patientId']!,
-            appointmentId: state.uri.queryParameters['appointmentId'],
-          ),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-        ),
-      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => ClinicianAppShell(
           navigationShell: shell,
@@ -237,6 +225,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: RoutePaths.doctorDashboard,
                 builder: (_, _) => const DoctorDashboardPage(),
               ),
+              GoRoute(
+                path: RoutePaths.doctorPatientHistory,
+                pageBuilder: (context, state) => CustomTransitionPage(
+                  key: state.pageKey,
+                  child: PatientHistoryPage(
+                    patientId: state.pathParameters['patientId']!,
+                    appointmentId: state.uri.queryParameters['appointmentId'],
+                  ),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
+                ),
+              ),
             ],
           ),
           StatefulShellBranch(
@@ -252,6 +253,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: RoutePaths.doctorApplyLeave,
                 builder: (_, _) => const ApplyLeavePage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: RoutePaths.doctorSettings,
+                builder: (_, _) => const SettingsPage(),
               ),
             ],
           ),
@@ -291,6 +300,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: RoutePaths.pharmacistDashboard,
                 builder: (_, _) => const PharmacistDashboardPage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: RoutePaths.pharmacistSettings,
+                builder: (_, _) => const SettingsPage(),
               ),
             ],
           ),

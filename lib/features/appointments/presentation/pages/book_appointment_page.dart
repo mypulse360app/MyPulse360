@@ -105,12 +105,7 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share_outlined, color: Colors.white, size: 22),
-            onPressed: () {},
-          ),
-        ],
+        actions: const [],
       ),
       body: AsyncSection(
         value: profileAsync,
@@ -180,64 +175,65 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
-                                      const SizedBox(width: 4),
-                                      const Text(
-                                        '4.9',
-                                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.white),
-                                      ),
-                                    ],
-                                  ),
-                                ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2),
+
                                 const SizedBox(height: 12),
-                                DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _selectedDoctorId,
-                                    hint: const Text(
-                                      'Select a Doctor',
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w800,
-                                        color: Colors.white,
-                                        height: 1.1,
-                                        letterSpacing: -0.5,
-                                      ),
-                                    ),
-                                    icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 28),
-                                    dropdownColor: const Color(0xFF101015),
-                                    isExpanded: true,
-                                    onChanged: (newId) {
-                                      if (newId != null) {
-                                        setState(() {
-                                          _selectedDoctorId = newId;
-                                          _selectedSlot = null; // reset slot on doctor change
-                                        });
-                                      }
-                                    },
-                                    items: availableDoctors.map((doc) {
-                                      return DropdownMenuItem<String>(
-                                        value: doc.id,
-                                        child: Text(
-                                          doc.fullName,
-                                          style: const TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w800,
-                                            color: Colors.white,
-                                            height: 1.1,
-                                            letterSpacing: -0.5,
-                                          ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: _selectedDoctorId,
+                                      hint: const Text(
+                                        'Select a Doctor',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
                                         ),
-                                      );
-                                    }).toList(),
+                                      ),
+                                      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 24),
+                                      dropdownColor: Theme.of(context).cardTheme.color,
+                                      isExpanded: true,
+                                      onChanged: (newId) {
+                                        if (newId != null) {
+                                          setState(() {
+                                            _selectedDoctorId = newId;
+                                            _selectedSlot = null; // reset slot on doctor change
+                                          });
+                                        }
+                                      },
+                                      selectedItemBuilder: (BuildContext context) {
+                                        return availableDoctors.map<Widget>((doc) {
+                                          return Container(
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(
+                                              doc.fullName,
+                                              style: const TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.w700,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          );
+                                        }).toList();
+                                      },
+                                      items: availableDoctors.map((doc) {
+                                        return DropdownMenuItem<String>(
+                                          value: doc.id,
+                                          child: Text(
+                                            doc.fullName,
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: colors.textPrimary,
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
                                   ),
                                 ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.2),
                                 const SizedBox(height: 6),
@@ -264,8 +260,16 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
                                   offset: const Offset(0, 8),
                                 )
                               ],
+                              image: doctor?.avatarUrl != null && doctor!.avatarUrl!.isNotEmpty
+                                  ? DecorationImage(
+                                      image: NetworkImage(doctor.avatarUrl!),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
                             ),
-                            child: Icon(Icons.person_outline_rounded, size: 40, color: Colors.white.withValues(alpha: 0.5)),
+                            child: (doctor?.avatarUrl == null || doctor!.avatarUrl!.isEmpty)
+                                ? Icon(Icons.person_outline_rounded, size: 40, color: Colors.white.withValues(alpha: 0.5))
+                                : null,
                           ).animate().scale(delay: 200.ms, duration: 400.ms, curve: Curves.easeOutBack),
                         ],
                       ),
