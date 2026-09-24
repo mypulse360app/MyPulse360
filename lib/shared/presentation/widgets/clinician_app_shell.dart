@@ -15,7 +15,7 @@ import 'sign_out_icon_button.dart';
 /// Below [AppConstants.desktopBreakpoint] it falls back to the same
 /// bottom-tab [AppShellScaffold] the patient app uses, so nothing breaks if
 /// a clinician opens the link on a phone.
-class ClinicianAppShell extends StatelessWidget {
+class ClinicianAppShell extends StatefulWidget {
   const ClinicianAppShell({
     super.key,
     required this.navigationShell,
@@ -34,16 +34,26 @@ class ClinicianAppShell extends StatelessWidget {
   final String? avatarUrl;
 
   @override
+  State<ClinicianAppShell> createState() => _ClinicianAppShellState();
+}
+
+class _ClinicianAppShellState extends State<ClinicianAppShell> {
+  bool _isManuallyExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.of(context).size.width >= AppConstants.desktopBreakpoint;
+    final width = MediaQuery.of(context).size.width;
+    final isDesktop = width >= AppConstants.desktopBreakpoint;
     if (!isDesktop) {
       return AppShellScaffold(
-        navigationShell: navigationShell,
-        items: items,
-        accentColor: accentColor,
+        navigationShell: widget.navigationShell,
+        items: widget.items,
+        accentColor: widget.accentColor,
       );
     }
 
+    final isExpandedDesktop = width >= 1100;
+    final shouldExpand = isExpandedDesktop || _isManuallyExpanded;
     final colors = context.colors;
     return Scaffold(
       backgroundColor: colors.surfaceMuted,
@@ -51,10 +61,12 @@ class ClinicianAppShell extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
-            child: Container(
-              width: 260,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              width: shouldExpand ? 260 : 85,
               decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.15),
+                color: widget.accentColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(32),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                 boxShadow: [
@@ -69,67 +81,90 @@ class ClinicianAppShell extends StatelessWidget {
                 borderRadius: BorderRadius.circular(32),
                 child: SafeArea(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: shouldExpand ? CrossAxisAlignment.start : CrossAxisAlignment.center,
                     children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                    padding: EdgeInsets.fromLTRB(shouldExpand ? 20 : 0, 20, shouldExpand ? 20 : 0, 16),
                     child: Row(
+                      mainAxisAlignment: shouldExpand ? MainAxisAlignment.start : MainAxisAlignment.center,
                       children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(colors: [colors.success, colors.info]),
-                            borderRadius: BorderRadius.circular(9),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(9),
+                          child: Image.asset(
+                            'assets/images/logo_mark.png',
+                            width: 32,
+                            height: 32,
                           ),
-                          child: const Icon(Icons.monitor_heart_outlined, color: Colors.white, size: 17),
                         ),
-                        const SizedBox(width: 10),
-                        Text(
-                          'MyPulse360',
-                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: colors.textPrimary),
-                        ),
+                        if (shouldExpand) ...[
+                          const SizedBox(width: 10),
+                          Text(
+                            'MyPulse360',
+                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: colors.textPrimary),
+                          ),
+                        ],
                       ],
                     ),
                   ),
                   Divider(height: 1, color: colors.border),
+                  if (!isExpandedDesktop) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: IconButton(
+                        icon: Icon(_isManuallyExpanded ? Icons.chevron_left : Icons.menu, color: colors.textPrimary),
+                        onPressed: () => setState(() => _isManuallyExpanded = !_isManuallyExpanded),
+                      ),
+                    ),
+                    Divider(height: 1, color: colors.border),
+                  ],
                   const SizedBox(height: 12),
-                  for (var i = 0; i < items.length; i++)
+                  for (var i = 0; i < widget.items.length; i++)
                     _SidebarItem(
-                      item: items[i],
-                      selected: i == navigationShell.currentIndex,
-                      accent: accentColor,
-                      onTap: () => navigationShell.goBranch(
+                      item: widget.items[i],
+                      selected: i == widget.navigationShell.currentIndex,
+                      accent: widget.accentColor,
+                      isExpanded: shouldExpand,
+                      onTap: () => widget.navigationShell.goBranch(
                         i,
-                        initialLocation: i == navigationShell.currentIndex,
+                        initialLocation: i == widget.navigationShell.currentIndex,
                       ),
                     ),
                   const Spacer(),
                   Divider(height: 1, color: colors.border),
                   Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Row(
-                      children: [
-                        AvatarWidget(name: userName, size: 34, color: accentColor, imagePath: avatarUrl),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    padding: EdgeInsets.all(shouldExpand ? 14 : 10),
+                    child: shouldExpand
+                        ? Row(
+                            children: [
+                              AvatarWidget(name: widget.userName, size: 34, color: widget.accentColor, imagePath: widget.avatarUrl),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      widget.userName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                    ),
+                                    Text(widget.roleLabel, style: TextStyle(fontSize: 11, color: colors.textSecondary)),
+                                  ],
+                                ),
+                              ),
+                              const SignOutIconButton(),
+                            ],
+                          )
+                        : Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                userName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                              ),
-                              Text(roleLabel, style: TextStyle(fontSize: 11, color: colors.textSecondary)),
+                              AvatarWidget(name: widget.userName, size: 34, color: widget.accentColor, imagePath: widget.avatarUrl),
+                              const SizedBox(height: 16),
+                              const SignOutIconButton(),
+                              const SizedBox(height: 8),
                             ],
                           ),
-                        ),
-                        const SignOutIconButton(),
-                      ],
-                    ),
                   ),
                 ],
               ),
@@ -143,7 +178,7 @@ class ClinicianAppShell extends StatelessWidget {
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1200),
-                  child: navigationShell,
+                  child: widget.navigationShell,
                 ),
               ),
             ),
@@ -159,12 +194,14 @@ class _SidebarItem extends StatelessWidget {
     required this.item,
     required this.selected,
     required this.accent,
+    required this.isExpanded,
     required this.onTap,
   });
 
   final NavItem item;
   final bool selected;
   final Color accent;
+  final bool isExpanded;
   final VoidCallback onTap;
 
   @override
@@ -186,35 +223,38 @@ class _SidebarItem extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+        padding: EdgeInsets.symmetric(horizontal: isExpanded ? 12.0 : 8.0, vertical: 4.0),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: isExpanded ? 16 : 0, vertical: 12),
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(32),
           ),
           child: Row(
+            mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
             children: [
               Icon(
                 selected ? item.selectedIcon : item.icon, 
                 size: 22, 
                 color: iconColor,
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  item.label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    color: textColor,
+              if (isExpanded) ...[
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    item.label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: textColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
+              ],
             ],
           ),
         ),

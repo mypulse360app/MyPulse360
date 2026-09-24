@@ -25,11 +25,13 @@ enum PrescriptionStatus {
 /// since no in-app consultation or pharmacist stands behind them.
 enum PrescriptionSource {
   inApp,
-  scannedExternal;
+  scannedExternal,
+  manualExternal;
 
   String get label => switch (this) {
         PrescriptionSource.inApp => 'Issued at this clinic',
         PrescriptionSource.scannedExternal => 'Scanned',
+        PrescriptionSource.manualExternal => 'Manual Entry',
       };
 }
 

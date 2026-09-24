@@ -19,6 +19,7 @@ import '../../../auth/domain/entities/app_user.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../patient/domain/entities/patient_profile.dart';
 import '../../../patient/presentation/providers/patient_providers.dart';
+import '../../../pharmacist/presentation/providers/ping_provider.dart';
 import '../providers/doctor_providers.dart';
 import '../widgets/patient_queue_tile.dart';
 
@@ -174,7 +175,7 @@ class _DoctorDashboardPageState extends ConsumerState<DoctorDashboardPage> {
   }
 }
 
-class _HeaderCard extends StatelessWidget {
+class _HeaderCard extends ConsumerWidget {
   const _HeaderCard({
     required this.user,
     required this.room,
@@ -185,8 +186,60 @@ class _HeaderCard extends StatelessWidget {
   final String? room;
   final bool showSignOut;
 
+  void _showPingOptions(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Ping Front Desk', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  alignment: Alignment.centerLeft,
+                ),
+                icon: const Icon(Icons.person_add),
+                label: const Text('Need assistance in room'),
+                onPressed: () {
+                  ref.read(pingProvider.notifier).sendPing('Doctor needs assistance in $room');
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ping sent!')));
+                },
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  alignment: Alignment.centerLeft,
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                ),
+                icon: const Icon(Icons.medication),
+                label: const Text('Please rush prescription'),
+                onPressed: () {
+                  ref.read(pingProvider.notifier).sendPing('Please rush prescription for current patient');
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ping sent!')));
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(18),
@@ -219,18 +272,26 @@ class _HeaderCard extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            width: 38,
-            height: 38,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.18),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.notifications_rounded,
-              color: Colors.white,
-              size: 18,
+          InkWell(
+            onTap: () => _showPingOptions(context, ref),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.campaign_rounded,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                  SizedBox(width: 6),
+                  Text('Ping Desk', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                ],
+              ),
             ),
           ),
           if (showSignOut) ...[

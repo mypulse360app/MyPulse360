@@ -11,6 +11,7 @@ class PrescriptionItem extends Equatable {
     required this.frequency,
     required this.durationDays,
     required this.instructions,
+    this.expiryDate,
     this.refillsAllowed = 0,
     this.packagingType = 'box',
     this.unitQuantity = 1,
@@ -25,6 +26,7 @@ class PrescriptionItem extends Equatable {
   final String frequency;
   final int durationDays;
   final String instructions;
+  final DateTime? expiryDate;
   final int refillsAllowed;
   final String packagingType;
   final int unitQuantity;
@@ -40,6 +42,7 @@ class PrescriptionItem extends Equatable {
         frequency,
         durationDays,
         instructions,
+        expiryDate,
         refillsAllowed,
         packagingType,
         unitQuantity,

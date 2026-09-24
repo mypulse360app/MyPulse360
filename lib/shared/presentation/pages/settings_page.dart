@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../config/theme/theme_mode_provider.dart';
+import '../../../features/auth/domain/entities/user_role.dart';
 import '../../../features/auth/presentation/providers/auth_providers.dart';
+import '../../../features/appointments/presentation/providers/appointments_providers.dart';
 import '../widgets/app_card.dart';
 import '../widgets/large_title_app_bar.dart';
 
@@ -14,37 +16,12 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
-  final _nameController = TextEditingController();
-  bool _isEditingName = false;
 
-  @override
-  void initState() {
-    super.initState();
-    final user = ref.read(currentUserProvider);
-    if (user != null) {
-      _nameController.text = user.fullName;
-    }
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  void _saveName() {
-    final newName = _nameController.text.trim();
-    if (newName.isNotEmpty) {
-      ref.read(authControllerProvider.notifier).updateName(newName);
-    }
-    setState(() {
-      _isEditingName = false;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
+    final user = ref.watch(currentUserProvider);
 
     return Scaffold(
       appBar: const LargeTitleAppBar(title: 'Settings'),
@@ -54,45 +31,34 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           child: ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Profile',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.person_outline),
-                      title: _isEditingName
-                          ? TextField(
-                              controller: _nameController,
-                              decoration: const InputDecoration(
-                                isDense: true,
-                                labelText: 'Full Name',
-                              ),
-                            )
-                          : Text(_nameController.text),
-                      trailing: _isEditingName
-                          ? IconButton(
-                              icon: const Icon(Icons.check, color: Colors.green),
-                              onPressed: _saveName,
-                            )
-                          : IconButton(
-                              icon: const Icon(Icons.edit, size: 20),
-                              onPressed: () {
-                                setState(() {
-                                  _isEditingName = true;
-                                });
-                              },
-                            ),
-                    ),
-                  ],
+              if (user != null && (user.role == UserRole.doctor || user.role == UserRole.pharmacist)) ...[
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Clinic Operations',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 16),
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final isClosed = ref.watch(clinicClosedProvider);
+                          return SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Clinic is Closed'),
+                            subtitle: Text(isClosed ? 'The clinic is currently marked as closed.' : 'The clinic is currently open.'),
+                            value: isClosed,
+                            onChanged: (val) => ref.read(clinicClosedProvider.notifier).state = val,
+                            activeThumbColor: Theme.of(context).colorScheme.error,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 24),
+              ],
               AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

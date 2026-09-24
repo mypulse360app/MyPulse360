@@ -62,7 +62,7 @@ class _OnboardingHealthcarePreferencesPageState
         );
     ref.read(patientDataRevisionProvider.notifier).state++;
     if (!mounted) return;
-    context.go(RoutePaths.onboardingWellnessGoals);
+    context.go(RoutePaths.onboardingHealthProfile);
   }
 
   @override

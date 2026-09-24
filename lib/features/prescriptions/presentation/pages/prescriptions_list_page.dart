@@ -6,6 +6,7 @@ import '../../../../shared/presentation/widgets/large_title_app_bar.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/prescriptions_providers.dart';
 import '../widgets/prescription_card.dart';
+import 'add_prescription_manually_page.dart';
 import 'scan_prescription_page.dart';
 
 /// P7 — Prescriptions: active, expiring, and expired cards.
@@ -29,6 +30,15 @@ class PrescriptionsListPage extends ConsumerWidget {
         title: 'Prescriptions',
         showBack: false,
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AddPrescriptionManuallyPage()),
+              );
+            },
+            icon: const Icon(Icons.add_rounded),
+            tooltip: 'Add prescription manually',
+          ),
           IconButton(
             onPressed: () => _scan(context),
             icon: const Icon(Icons.document_scanner_rounded),

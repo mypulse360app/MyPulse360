@@ -152,6 +152,7 @@ class SupabasePrescriptionsDataSource implements PrescriptionsDataSource {
             'quantity': item.quantity,
             'unit': item.unit,
             'refills_allowed': item.refillsAllowed,
+            'expiry_date': item.expiryDate?.toIso8601String(),
           };
         }).toList();
 
@@ -244,6 +245,7 @@ class SupabasePrescriptionsDataSource implements PrescriptionsDataSource {
         packagingType: (ir['packaging_type'] as String?) ?? 'box',
         unitQuantity: (ir['unit_quantity'] as int?) ?? 1,
         refillsAllowed: (ir['refills_allowed'] as int?) ?? 0,
+        expiryDate: ir['expiry_date'] != null ? DateTime.tryParse(ir['expiry_date'] as String) : null,
       );
     }).toList();
 

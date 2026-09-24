@@ -14,6 +14,7 @@ import '../../domain/entities/prescription_item.dart';
 import '../../domain/scanned_prescription_ocr.dart';
 import '../../domain/scanned_prescription_payload.dart';
 import '../providers/prescriptions_providers.dart';
+import 'add_prescription_manually_page.dart';
 
 /// Digitizes a paper prescription or medication package from an outside prescriber:
 /// the patient takes a photo or selects an image from their gallery, optical
@@ -36,6 +37,7 @@ class _MedFormControllers {
         durationDays = TextEditingController(text: item.durationDays.toString()),
         instructions = TextEditingController(text: item.instructions),
         form = item.form,
+        expiryDate = item.expiryDate,
         refillsAllowed = item.refillsAllowed,
         packagingType = item.packagingType,
         unitQuantity = TextEditingController(text: item.unitQuantity.toString());
@@ -48,6 +50,7 @@ class _MedFormControllers {
   final TextEditingController durationDays;
   final TextEditingController instructions;
   final TextEditingController unitQuantity;
+  DateTime? expiryDate;
   final String form;
   final int refillsAllowed;
   String packagingType;
@@ -66,7 +69,6 @@ class _MedFormControllers {
 
 class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
   ScannedPrescriptionPayload? _payload;
-  final TextEditingController _prescriberController = TextEditingController();
   List<_MedFormControllers> _medControllers = [];
   DateTime _issuedDate = DateTime.now();
   DateTime _expiryDate = DateTime.now().add(const Duration(days: 30));
@@ -82,7 +84,6 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
 
   @override
   void dispose() {
-    _prescriberController.dispose();
     for (final c in _medControllers) {
       c.dispose();
     }
@@ -90,9 +91,15 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
   }
 
   void _showScanOptions() {
+    final colors = context.colors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF16161F) : colors.surfaceSubtle;
+    final textColor = isDark ? Colors.white : colors.textPrimary;
+    final mutedTextColor = isDark ? Colors.white60 : colors.textSecondary;
+    
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF16161F),
+      backgroundColor: bgColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -107,24 +114,24 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: isDark ? Colors.white24 : colors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 const SizedBox(height: 18),
-                const Text(
+                Text(
                   'Scan Prescription (OCR)',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: textColor,
                     fontSize: 17,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'Take a clear photo of your paper prescription or medication box.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white60, fontSize: 13),
+                  style: TextStyle(color: mutedTextColor, fontSize: 13),
                 ),
                 const SizedBox(height: 20),
                 ListTile(
@@ -136,8 +143,8 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
                     ),
                     child: const Icon(Icons.camera_alt_rounded, color: Colors.blueAccent),
                   ),
-                  title: const Text('Take Photo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Capture with device camera', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                  title: Text('Take Photo', style: TextStyle(color: textColor, fontWeight: FontWeight.w600)),
+                  subtitle: Text('Capture with device camera', style: TextStyle(color: mutedTextColor, fontSize: 12)),
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     _takePhoto(fromGallery: false);
@@ -152,8 +159,8 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
                     ),
                     child: const Icon(Icons.photo_library_rounded, color: Colors.purpleAccent),
                   ),
-                  title: const Text('Choose from Photos', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Upload prescription image from gallery', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                  title: Text('Choose from Photos', style: TextStyle(color: textColor, fontWeight: FontWeight.w600)),
+                  subtitle: Text('Upload prescription image from gallery', style: TextStyle(color: mutedTextColor, fontSize: 12)),
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     _takePhoto(fromGallery: true);
@@ -163,16 +170,18 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.edit_note_rounded, color: Colors.white),
+                    child: Icon(Icons.edit_note_rounded, color: isDark ? Colors.white : Colors.black87),
                   ),
-                  title: const Text('Enter Manually', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Type details without scanning', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                  title: Text('Enter Manually', style: TextStyle(color: textColor, fontWeight: FontWeight.w600)),
+                  subtitle: Text('Type details without scanning', style: TextStyle(color: mutedTextColor, fontSize: 12)),
                   onTap: () {
                     Navigator.of(sheetContext).pop();
-                    _applyPayload(_emptyPayload());
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const AddPrescriptionManuallyPage()),
+                    );
                   },
                 ),
               ],
@@ -220,26 +229,7 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
     _applyPayload(payload);
   }
 
-  ScannedPrescriptionPayload _emptyPayload() {
-    final now = DateTime.now();
-    return ScannedPrescriptionPayload(
-      issuedDate: now,
-      expiryDate: now.add(const Duration(days: 30)),
-      medications: const [
-        PrescriptionItem(
-          id: 'scanned-item-0',
-          medicationName: '',
-          strength: '',
-          form: 'tablet',
-          quantity: 1,
-          unit: 'units',
-          frequency: 'As directed',
-          durationDays: 30,
-          instructions: '',
-        ),
-      ],
-    );
-  }
+
 
   void _applyPayload(ScannedPrescriptionPayload payload) {
     for (final c in _medControllers) {
@@ -251,7 +241,6 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
       _validationError = null;
       _issuedDate = payload.issuedDate;
       _expiryDate = payload.expiryDate;
-      _prescriberController.text = payload.prescriberName ?? '';
       _medControllers = payload.medications.map(_MedFormControllers.new).toList();
     });
   }
@@ -304,6 +293,7 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
           frequency: c.frequency.text.trim().isEmpty ? 'As directed' : c.frequency.text.trim(),
           durationDays: int.tryParse(c.durationDays.text.trim()) ?? 30,
           instructions: c.instructions.text.trim(),
+          expiryDate: c.expiryDate,
           refillsAllowed: c.refillsAllowed,
           packagingType: c.packagingType,
           unitQuantity: int.tryParse(c.unitQuantity.text.trim()) ?? 1,
@@ -321,7 +311,6 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
       _saving = true;
     });
 
-    final prescriberName = _prescriberController.text.trim();
     try {
       await ref.read(prescriptionsRepositoryProvider).create(
             Prescription(
@@ -333,7 +322,6 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
               status: PrescriptionStatus.active,
               items: items,
               source: PrescriptionSource.scannedExternal,
-              externalDoctorName: prescriberName.isEmpty ? null : prescriberName,
             ),
           );
       ref.read(prescriptionsRevisionProvider.notifier).state++;
@@ -404,6 +392,10 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
   }
 
   Widget _buildPromptState(AppSemanticColors colors) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : colors.textPrimary;
+    final mutedTextColor = isDark ? Colors.white60 : colors.textSecondary;
+    
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Center(
@@ -420,15 +412,15 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
               child: const Icon(Icons.document_scanner_rounded, size: 40, color: Colors.blueAccent),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'OCR Prescription Scanner',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
             ),
             const SizedBox(height: 8),
             Text(
               'Capture a photo of your paper prescription or medication box to automatically extract medication names, dosages, and expiration dates.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: colors.textSecondary, height: 1.4),
+              style: TextStyle(fontSize: 13, color: mutedTextColor, height: 1.4),
             ),
             const SizedBox(height: 32),
             SizedBox(
@@ -453,8 +445,8 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
                 icon: const Icon(Icons.photo_library_outlined),
                 label: const Text('Choose from Photos'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                  foregroundColor: textColor,
+                  side: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.2) : colors.border),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
@@ -462,8 +454,12 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
             ),
             const SizedBox(height: 12),
             TextButton(
-              onPressed: () => _applyPayload(_emptyPayload()),
-              child: const Text('Enter Details Manually', style: TextStyle(color: Colors.white70)),
+              onPressed: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => const AddPrescriptionManuallyPage()),
+                );
+              },
+              child: Text('Enter Details Manually', style: TextStyle(color: mutedTextColor)),
             ),
           ],
         ),
@@ -582,8 +578,12 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
     AppSemanticColors colors,
     String label,
     DateTime value,
-    ValueChanged<DateTime> onChanged,
-  ) {
+    ValueChanged<DateTime> onChanged, {
+    bool isDark = false,
+  }) {
+    final textColor = isDark ? Colors.white : colors.textPrimary;
+    final textMuted = isDark ? Colors.white60 : colors.textTertiary;
+
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: () async {
@@ -598,16 +598,16 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 10.5, color: colors.textTertiary)),
+          Text(label, style: TextStyle(fontSize: 10.5, color: textMuted)),
           const SizedBox(height: 2),
           Row(
             children: [
               Text(
                 DateFormatters.short(value),
-                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: colors.textPrimary),
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: textColor),
               ),
               const SizedBox(width: 4),
-              Icon(Icons.edit_calendar_outlined, size: 13, color: colors.textTertiary),
+              Icon(Icons.edit_calendar_outlined, size: 13, color: textMuted),
             ],
           ),
         ],
@@ -733,7 +733,22 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
             ],
           ),
           const SizedBox(height: 12),
-          _darkTextField(c.durationDays, 'Duration (days)', keyboardType: TextInputType.number),
+          Row(
+            children: [
+              Expanded(
+                child: _dateField(
+                  context,
+                  colors,
+                  'Medication Expiry',
+                  c.expiryDate ?? DateTime.now().add(const Duration(days: 365)),
+                  (d) => setState(() => c.expiryDate = d),
+                  isDark: true,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: _darkTextField(c.durationDays, 'Duration (days)', keyboardType: TextInputType.number)),
+            ],
+          ),
           const SizedBox(height: 12),
           _darkTextField(c.instructions, 'Instructions', maxLines: 2),
         ],

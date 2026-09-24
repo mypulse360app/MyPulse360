@@ -36,10 +36,11 @@ void main() {
       wrap(VerificationChecklist(checked: const {0, 2}, onChanged: (_) {})),
     );
 
-    final checkboxes = tester.widgetList<Checkbox>(find.byType(Checkbox)).toList();
-    expect(checkboxes[0].value, isTrue);
-    expect(checkboxes[1].value, isFalse);
-    expect(checkboxes[2].value, isTrue);
-    expect(checkboxes[3].value, isFalse);
+    // We use a custom checkbox UI with Icons.check_rounded, so we expect exactly 2
+    // of them for the 2 checked items.
+    expect(find.byIcon(Icons.check_rounded), findsNWidgets(2));
+    
+    // The top-level summary also has a checklist icon or a verified icon depending on state, 
+    // but the list items themselves use check_rounded.
   });
 }

@@ -24,7 +24,6 @@ import '../../features/patient/presentation/pages/health_profile_setup_page.dart
 import '../../features/patient/presentation/pages/onboarding_emergency_contact_page.dart';
 import '../../features/patient/presentation/pages/onboarding_healthcare_preferences_page.dart';
 import '../../features/patient/presentation/pages/onboarding_welcome_page.dart';
-import '../../features/patient/presentation/pages/onboarding_wellness_goals_page.dart';
 import '../../features/patient/presentation/pages/profile_page.dart';
 import '../../features/patient/presentation/providers/patient_providers.dart';
 import '../../features/pharmacist/presentation/pages/create_prescription_page.dart';
@@ -130,10 +129,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RoutePaths.onboardingHealthcarePreferences,
         builder: (_, _) => const OnboardingHealthcarePreferencesPage(),
-      ),
-      GoRoute(
-        path: RoutePaths.onboardingWellnessGoals,
-        builder: (_, _) => const OnboardingWellnessGoalsPage(),
       ),
       GoRoute(
         path: RoutePaths.onboardingHealthProfile,
@@ -266,24 +261,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      GoRoute(
-        path: RoutePaths.pharmacistVerify,
-        builder: (_, state) => PrescriptionVerificationPage(
-          prescriptionId: state.pathParameters['prescriptionId']!,
-        ),
-      ),
-      GoRoute(
-        path: RoutePaths.pharmacistCreatePrescription,
-        builder: (_, state) => CreatePrescriptionPage(
-          consultationId: state.pathParameters['consultationId']!,
-        ),
-      ),
-      GoRoute(
-        path: RoutePaths.pharmacistProcessPrescription,
-        builder: (_, state) => ProcessPrescriptionPage(
-          consultationId: state.pathParameters['consultationId']!,
-        ),
-      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => ClinicianAppShell(
           navigationShell: shell,
@@ -300,6 +277,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: RoutePaths.pharmacistDashboard,
                 builder: (_, _) => const PharmacistDashboardPage(),
+              ),
+              GoRoute(
+                path: RoutePaths.pharmacistVerify,
+                builder: (_, state) => PrescriptionVerificationPage(
+                  prescriptionId: state.pathParameters['prescriptionId']!,
+                ),
+              ),
+              GoRoute(
+                path: RoutePaths.pharmacistCreatePrescription,
+                builder: (_, state) => CreatePrescriptionPage(
+                  consultationId: state.pathParameters['consultationId']!,
+                ),
+              ),
+              GoRoute(
+                path: RoutePaths.pharmacistProcessPrescription,
+                builder: (_, state) => ProcessPrescriptionPage(
+                  consultationId: state.pathParameters['consultationId']!,
+                ),
               ),
             ],
           ),

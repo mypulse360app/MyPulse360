@@ -12,6 +12,7 @@ import '../../../../shared/presentation/widgets/sign_out_icon_button.dart';
 import '../../../../shared/utils/date_formatters.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/pharmacist_providers.dart';
+import '../providers/ping_provider.dart';
 import '../widgets/add_patient_dialog.dart';
 import '../../../appointments/presentation/providers/appointments_providers.dart';
 import '../../../appointments/domain/entities/appointment.dart';
@@ -29,6 +30,29 @@ class PharmacistDashboardPage extends ConsumerWidget {
     ref.watch(realtimeQueueStreamProvider);
     ref.watch(appointmentsRevisionProvider);
     ref.watch(prescriptionsRevisionProvider);
+
+    ref.listen(pingProvider, (previous, next) {
+      if (next != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.notifications_active, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text('DOCTOR PING: ${next.message}')),
+              ],
+            ),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'DISMISS',
+              textColor: Colors.white,
+              onPressed: () => ref.read(pingProvider.notifier).clearPing(),
+            ),
+          ),
+        );
+      }
+    });
 
     final colors = context.colors;
     final user = ref.watch(currentUserProvider);
@@ -54,41 +78,12 @@ class PharmacistDashboardPage extends ConsumerWidget {
                 Expanded(
                   child: Text(user.fullName, style: Theme.of(context).textTheme.headlineMedium),
                 ),
-                FilledButton.icon(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (_) => const AddPatientDialog(),
-                    );
-                  },
-                  icon: const Icon(Icons.person_add_rounded, size: 18),
-                  label: const Text('Add Patient'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: colors.clinicianAccent,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 8),
                 if (!isDesktop) const SignOutIconButton(),
               ],
             ),
             const SizedBox(height: 2),
             Text(DateFormatters.full(DateTime.now()), style: TextStyle(fontSize: 12, color: colors.textSecondary)),
             const SizedBox(height: 16),
-            Consumer(
-              builder: (context, ref, child) {
-                final isClosed = ref.watch(clinicClosedProvider);
-                return SwitchListTile(
-                  title: const Text('Clinic is Closed'),
-                  subtitle: Text(isClosed ? 'The clinic is currently marked as closed.' : 'The clinic is currently open.'),
-                  value: isClosed,
-                  onChanged: (val) => ref.read(clinicClosedProvider.notifier).state = val,
-                  activeThumbColor: colors.danger,
-                  contentPadding: EdgeInsets.zero,
-                );
-              },
-            ),
-            const SizedBox(height: 8),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -138,7 +133,7 @@ class PharmacistDashboardPage extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (queue.isNotEmpty)
+                if (queue.isNotEmpty) ...[
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
@@ -157,6 +152,22 @@ class PharmacistDashboardPage extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 12),
+                ],
+                FilledButton.icon(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => const AddPatientDialog(),
+                    );
+                  },
+                  icon: const Icon(Icons.person_add_rounded, size: 18),
+                  label: const Text('Add Patient'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colors.clinicianAccent,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 24),

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -11,12 +11,10 @@ import '../../../../shared/presentation/widgets/confirm_dialog.dart';
 import '../../../../shared/presentation/widgets/grouped_list.dart';
 import '../../../../shared/presentation/widgets/grouped_list_tile.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
-import '../../../health_dashboard/presentation/pages/health_overview_page.dart';
 import '../providers/patient_providers.dart';
 import '../widgets/danger_zone_section.dart';
 import '../widgets/edit_health_profile_sheet.dart';
 import '../widgets/profile_settings_section.dart';
-import '../widgets/wellness_goals_section.dart';
 import 'account_deletion_page.dart';
 
 /// P9 — Profile: grouped rows, toggles, danger zone.
@@ -58,8 +56,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final user = ref.watch(currentUserProvider);
     if (user == null) return const SizedBox.shrink();
     final profile = ref.watch(patientProfileProvider(user.id)).valueOrNull;
-    final goals =
-        ref.watch(wellnessGoalsProvider(user.id)).valueOrNull ?? const [];
     final themeMode = ref.watch(themeModeProvider);
 
     return Scaffold(
@@ -101,15 +97,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             GroupedList(
               header: 'Health Profile',
               children: [
-                GroupedListTile(
-                  title: 'Vitals & Trends',
-                  leadingIcon: Icons.monitor_heart_outlined,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const HealthOverviewPage(),
-                    ),
-                  ),
-                ),
                 GroupedListTile(
                   title: 'Date of Birth',
                   leadingIcon: Icons.cake_outlined,
@@ -167,8 +154,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            WellnessGoalsSection(patientId: user.id, goals: goals),
             const SizedBox(height: 20),
           ],
           ProfileSettingsSection(

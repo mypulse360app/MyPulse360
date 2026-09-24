@@ -20,7 +20,7 @@ class AddPatientDialog extends ConsumerStatefulWidget {
 class _AddPatientDialogState extends ConsumerState<AddPatientDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _icController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
@@ -34,13 +34,13 @@ class _AddPatientDialogState extends ConsumerState<AddPatientDialog> {
       id: newPatientId,
       email: 'walkin_$newPatientId@example.com',
       fullName: _nameController.text.trim(),
+      phone: _phoneController.text.trim(),
       role: UserRole.patient,
       clinicId: user?.clinicId ?? MockIds.defaultClinicId,
     );
     
     final newProfile = PatientProfile(
       id: newPatientId,
-      icNumber: _icController.text.trim(),
       heightCm: 170,
       weightKg: 70,
       allergies: const [],
@@ -73,7 +73,7 @@ class _AddPatientDialogState extends ConsumerState<AddPatientDialog> {
   @override
   void dispose() {
     _nameController.dispose();
-    _icController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -93,8 +93,9 @@ class _AddPatientDialogState extends ConsumerState<AddPatientDialog> {
             ),
             const SizedBox(height: 16),
             TextFormField(
-              controller: _icController,
-              decoration: const InputDecoration(labelText: 'IC Number'),
+              controller: _phoneController,
+              decoration: const InputDecoration(labelText: 'Phone Number'),
+              keyboardType: TextInputType.phone,
               validator: (v) => v == null || v.isEmpty ? 'Required' : null,
             ),
           ],

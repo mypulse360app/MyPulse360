@@ -7,7 +7,6 @@ import '../../../../config/router/route_paths.dart';
 import '../../../../shared/utils/spring_curve.dart';
 import '../../../../config/theme/app_theme.dart';
 import '../../../../shared/presentation/widgets/async_section.dart';
-import '../../../../shared/presentation/widgets/section_header.dart';
 import '../../../../shared/utils/date_formatters.dart';
 import '../../../appointments/presentation/pages/book_appointment_page.dart';
 import '../../../appointments/domain/entities/appointment.dart';
@@ -20,10 +19,9 @@ import '../../../health_tips/data/health_tips_data.dart';
 import '../../../health_tips/presentation/widgets/health_tip_card.dart';
 import '../providers/health_dashboard_providers.dart';
 import '../widgets/next_appointment_banner.dart';
-import '../widgets/wellness_goal_row.dart';
 
 /// P4 — Patient Dashboard: two big hero actions (Book Appointment,
-/// Prescriptions) up top, a Health Tips strip, then goals/next-appointment/
+/// Prescriptions) up top, a Health Tips strip, then next-appointment/
 /// reminders. Health Overview is no longer featured here.
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
@@ -34,10 +32,6 @@ class DashboardPage extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     if (user == null) return const SizedBox.shrink();
 
-    // Read as AsyncValue, not `.valueOrNull` — this page makes claims
-    // ("No goals yet", the insight cards) that must wait for a settled
-    // value rather than collapsing a loading/errored fetch into "empty".
-    final goalsAsync = ref.watch(wellnessGoalsProvider(user.id));
     final profileAsync = ref.watch(patientProfileProvider(user.id));
     final nextAppointment = ref
         .watch(nextUpcomingAppointmentProvider(user.id))
@@ -229,36 +223,7 @@ class DashboardPage extends ConsumerWidget {
             ),
             const SizedBox(height: 10),
             _PatientTemperatureSection(patientId: user.id),
-            const SizedBox(height: 24),
-            SectionHeader(
-              title: 'Your Goals This Week',
-              // Hiding the shortcut while unsettled is a safe default (it
-              // declines to act), unlike the "No goals yet" text below,
-              // which would be a false claim if shown before goals load.
-              actionLabel: (goalsAsync.valueOrNull?.isEmpty ?? true)
-                  ? null
-                  : 'See all',
-            ),
-            const SizedBox(height: 10),
-            AsyncSection(
-              value: goalsAsync,
-              data: (goals) => goals.isEmpty
-                  ? Text(
-                      'No goals yet — add some from your profile.',
-                      style: TextStyle(
-                        color: colors.textSecondary,
-                        fontSize: 12,
-                      ),
-                    )
-                  : Column(
-                      children: [
-                        for (final goal in goals) ...[
-                          WellnessGoalRow(goal: goal),
-                          const SizedBox(height: 10),
-                        ],
-                      ],
-                    ),
-            ),
+            // Removed Your Goals This Week section
           ],
         ),
       ),

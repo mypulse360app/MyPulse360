@@ -360,6 +360,45 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
                   ),
                 ),
               const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Lab Results & Attachments',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Simulated file picker: Document uploaded successfully!')),
+                      );
+                    },
+                    icon: const Icon(Icons.upload_file, size: 16),
+                    label: const Text('Upload'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              AppCard(
+                child: Column(
+                  children: [
+                    _AttachmentTile(
+                      name: 'Blood Test Results - May 2026.pdf',
+                      date: 'May 14, 2026',
+                      icon: Icons.picture_as_pdf,
+                      color: Colors.redAccent,
+                    ),
+                    Divider(height: 20, color: colors.border),
+                    _AttachmentTile(
+                      name: 'Chest X-Ray.jpeg',
+                      date: 'April 22, 2026',
+                      icon: Icons.image,
+                      color: Colors.blueAccent,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
               Text(
                 'Past Consultations',
                 style: Theme.of(context).textTheme.titleSmall,
@@ -517,6 +556,57 @@ class _VitalBadge extends StatelessWidget {
         Icon(icon, size: 14, color: context.colors.textSecondary),
         const SizedBox(width: 4),
         Text(label, style: TextStyle(fontSize: 11, color: context.colors.textSecondary, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+}
+
+class _AttachmentTile extends StatelessWidget {
+  const _AttachmentTile({
+    required this.name,
+    required this.date,
+    required this.icon,
+    required this.color,
+  });
+
+  final String name;
+  final String date;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 24),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 2),
+              Text('Uploaded $date', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+            ],
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.download_rounded, size: 20),
+          color: colors.textSecondary,
+          onPressed: () {
+             ScaffoldMessenger.of(context).showSnackBar(
+               SnackBar(content: Text('Simulated download: $name')),
+             );
+          },
+        ),
       ],
     );
   }
