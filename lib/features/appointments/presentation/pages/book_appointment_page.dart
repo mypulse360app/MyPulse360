@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -19,8 +19,8 @@ const _appointmentTypes = [
 ];
 const _customType = 'Custom';
 
-/// P6 — Book Appointment: month calendar + slot grid + booking summary,
-/// matching the §4.1.6B reference (calendar + slot grid with
+/// P6 â€” Book Appointment: month calendar + slot grid + booking summary,
+/// matching the Â§4.1.6B reference (calendar + slot grid with
 /// booked/selected/disabled states).
 class BookAppointmentPage extends ConsumerStatefulWidget {
   const BookAppointmentPage({super.key});
@@ -37,6 +37,7 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
   final String _type = _appointmentTypes.first;
   final _customTypeController = TextEditingController();
   bool _booking = false;
+  String? _selectedReason;
 
   bool get _isCustom => _type == _customType;
   bool get _customTypeMissing =>
@@ -237,11 +238,7 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
                                   ),
                                 ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.2),
                                 const SizedBox(height: 6),
-                                if (doctor != null)
-                                  Text(
-                                    'Cardiology Specialist',
-                                    style: TextStyle(fontSize: 15, color: Colors.white.withValues(alpha: 0.7), fontWeight: FontWeight.w500),
-                                  ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2),
+                                
                               ],
                             ),
                           ),
@@ -404,7 +401,11 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
                                           onSelect: (s) => setState(() => _selectedSlot = s),
                                         ),
                                       
-                                      const SizedBox(height: 48),
+                                      const SizedBox(height: 32),
+Text('Reason for Visit', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700, fontSize: 18)),
+const SizedBox(height: 12),
+_ReasonSelector(selectedReason: _selectedReason, onSelect: (reason) => setState(() => _selectedReason = reason)),
+const SizedBox(height: 48),
                                       
                                       SizedBox(
                                         width: double.infinity,
@@ -432,7 +433,7 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
                                                     style: TextStyle(
                                                       fontSize: 16, 
                                                       fontWeight: FontWeight.w600,
-                                                      color: _selectedSlot == null ? colors.textTertiary : Colors.white,
+                                                      color: _selectedSlot == null || _selectedReason == null ? colors.textTertiary : Colors.white,
                                                     ),
                                                   ),
                                             ),
@@ -461,5 +462,67 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
     );
   }
 }
+
+
+
+class _ReasonSelector extends StatelessWidget {
+  final String? selectedReason;
+  final ValueChanged<String> onSelect;
+
+  const _ReasonSelector({required this.selectedReason, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final reasons = [
+      ('General Consultation', 'Standard visit for new or unspecific symptoms.'),
+      ('Routine Checkup', 'Annual or periodic health evaluation and physical.'),
+      ('Chronic Condition Management', 'Management and review of ongoing health conditions.'),
+      ('Follow-up & Diagnostics', 'Review test results or follow up on a previous visit.'),
+    ];
+
+    return Column(
+      children: reasons.map((r) {
+        final isSelected = selectedReason == r.$1;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: InkWell(
+            onTap: () => onSelect(r.$1),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: isSelected ? colors.patientAccent : colors.border),
+                borderRadius: BorderRadius.circular(12),
+                color: isSelected ? colors.patientAccent.withValues(alpha: 0.1) : Colors.transparent,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                    color: isSelected ? colors.patientAccent : colors.textTertiary,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(r.$1, style: TextStyle(fontWeight: FontWeight.w600, color: colors.textPrimary)),
+                        const SizedBox(height: 2),
+                        Text(r.$2, style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+
 
 

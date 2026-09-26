@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -27,8 +28,8 @@ import '../widgets/sticky_submit_bar.dart';
 const _medicationNoteHint = 'e.g. Needs Metformin 500mg refill, 2x daily';
 
 /// Doctor-facing read view of a patient's prior visits, prescriptions, and
-/// health trends. The doctor's role is review-only — diagnosing from
-/// history, not documenting a consultation — so when opened from today's
+/// health trends. The doctor's role is review-only â€” diagnosing from
+/// history, not documenting a consultation â€” so when opened from today's
 /// queue ([appointmentId] set), the only action available is a plain
 /// "Mark as Seen" that hands the visit off to The clinic assistant to prescribe.
 class PatientHistoryPage extends ConsumerStatefulWidget {
@@ -48,6 +49,7 @@ class PatientHistoryPage extends ConsumerStatefulWidget {
 class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
   final _medicationNoteController = TextEditingController();
   bool _marking = false;
+  final List<String> _uploadedFiles = [];
 
   @override
   void dispose() {
@@ -194,7 +196,7 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
                               if (profile?.gender != null) profile!.gender!,
                               if (profile?.bloodType != null)
                                 'Type ${profile!.bloodType}',
-                            ].join(' · '),
+                            ].join(' Â· '),
                             style: TextStyle(
                               fontSize: 12,
                               color: colors.textSecondary,
@@ -229,8 +231,8 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              "Today's visit — ${pendingAppointment.appointmentType}"
-                              '${pendingAppointment.reasonForVisit != null ? " · ${pendingAppointment.reasonForVisit}" : ''}',
+                              "Today's visit â€” ${pendingAppointment.appointmentType}"
+                              '${pendingAppointment.reasonForVisit != null ? " Â· ${pendingAppointment.reasonForVisit}" : ''}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: colors.textPrimary,
@@ -252,7 +254,7 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
                               Icon(Icons.thermostat, size: 18, color: colors.danger),
                               const SizedBox(width: 8),
                               Text(
-                                'Body Temp: ${currentConsultation!.vitals.temperatureCelsius!.toStringAsFixed(1)} °C',
+                                'Body Temp: ${currentConsultation!.vitals.temperatureCelsius!.toStringAsFixed(1)} Â°C',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -281,7 +283,7 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Optional — a quick note on what this patient needs. The clinic assistant '
+                  'Optional â€” a quick note on what this patient needs. The clinic assistant '
                   'still enters the formal e-prescription.',
                   style: TextStyle(fontSize: 11.5, color: colors.textSecondary),
                 ),
@@ -368,10 +370,21 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   TextButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Simulated file picker: Document uploaded successfully!')),
+                    onPressed: () async {
+                      final result = await FilePicker.pickFiles(
+                        type: FileType.custom,
+                        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
                       );
+                      if (result.isNotEmpty && result.first.name.isNotEmpty) {
+                        setState(() {
+                          _uploadedFiles.add(result.first.name);
+                        });
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Document uploaded successfully!')),
+                          );
+                        }
+                      }
                     },
                     icon: const Icon(Icons.upload_file, size: 16),
                     label: const Text('Upload'),
@@ -382,6 +395,17 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
               AppCard(
                 child: Column(
                   children: [
+                    ..._uploadedFiles.map((fileName) => Column(
+                      children: [
+                        _AttachmentTile(
+                          name: fileName,
+                          date: 'Just now',
+                          icon: fileName.toLowerCase().endsWith('.pdf') ? Icons.picture_as_pdf : Icons.image,
+                          color: fileName.toLowerCase().endsWith('.pdf') ? Colors.redAccent : Colors.blueAccent,
+                        ),
+                        Divider(height: 20, color: colors.border),
+                      ],
+                    )),
                     _AttachmentTile(
                       name: 'Blood Test Results - May 2026.pdf',
                       date: 'May 14, 2026',
@@ -611,3 +635,10 @@ class _AttachmentTile extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+
+
