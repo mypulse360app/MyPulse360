@@ -46,6 +46,48 @@ class _DoctorDashboardPageState extends ConsumerState<DoctorDashboardPage> {
     if (user == null) return const SizedBox.shrink();
 
     final queueAsync = ref.watch(todaysQueueProvider(user.id));
+
+    ref.listen<AsyncValue<List<Appointment>>>(
+      todaysQueueProvider(user.id),
+      (previous, next) {
+        if (previous != null && previous.hasValue && next.hasValue) {
+          final prevList = previous.value!;
+          final nextList = next.value!;
+          
+          for (final nextAppt in nextList) {
+            if (nextAppt.status == AppointmentStatus.confirmed) {
+              final prevAppt = prevList.firstWhere(
+                (a) => a.id == nextAppt.id,
+                orElse: () => nextAppt.copyWith(status: AppointmentStatus.scheduled),
+              );
+              
+              if (prevAppt.status != AppointmentStatus.confirmed) {
+                // Patient just checked in!
+                final patientName = ref.read(userProfileProvider(nextAppt.patientId)).valueOrNull?.fullName ?? 'A patient';
+                
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.assignment_ind, color: Colors.white),
+                          const SizedBox(width: 12),
+                          Expanded(child: Text('$patientName has arrived at the front desk and is waiting!')),
+                        ],
+                      ),
+                      backgroundColor: colors.patientAccent,
+                      behavior: SnackBarBehavior.floating,
+                      margin: const EdgeInsets.all(16),
+                      duration: const Duration(seconds: 5),
+                    ),
+                  );
+              }
+            }
+          }
+        }
+      },
+    );
     final isDesktop =
         MediaQuery.of(context).size.width >= AppConstants.desktopBreakpoint;
 

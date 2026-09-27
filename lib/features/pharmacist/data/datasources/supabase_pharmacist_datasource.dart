@@ -53,7 +53,7 @@ class SupabasePharmacistDataSource implements PharmacistDataSource {
       // Update existing consultation with vitals note
       consultationId = res['id'] as String;
       await _client.from('consultations').update({
-        'notes': 'Vitals logged: Temp ${temperature.toStringAsFixed(1)} °C',
+        'vitals': {'temperatureCelsius': temperature},
       }).eq('id', consultationId);
     } else {
       // Create new consultation for this appointment
@@ -62,7 +62,7 @@ class SupabasePharmacistDataSource implements PharmacistDataSource {
         'patient_id': patientId,
         'doctor_id': doctorId,
         'status': 'in_progress',
-        'notes': 'Vitals logged: Temp ${temperature.toStringAsFixed(1)} °C',
+        'vitals': {'temperatureCelsius': temperature},
       }).select('id').single();
       consultationId = inserted['id'] as String;
     }
