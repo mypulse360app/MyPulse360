@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,7 @@ import '../../../../shared/presentation/widgets/app_text_field.dart';
 import '../../../../shared/presentation/widgets/primary_button.dart';
 import '../../../patient/domain/entities/patient_profile.dart';
 import '../../../patient/presentation/providers/patient_providers.dart';
+import '../../domain/entities/user_role.dart';
 import '../providers/auth_providers.dart';
 import '../state/auth_state.dart';
 
@@ -108,6 +110,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         return;
       }
     }
+    // Route doctor and clinic assistant through splash to play their role video (mobile only)
+    if (!kIsWeb && (user.role == UserRole.doctor || user.role == UserRole.pharmacist)) {
+      context.go(RoutePaths.splash);
+      return;
+    }
+
     context.go(kRoleNavConfig[user.role]!.rootPath);
   }
 
