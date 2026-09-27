@@ -1,0 +1,38 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch: # This allows you to manually trigger the build from the GitHub Actions tab
+
+jobs:
+  build-ios:
+    name: Build unsigned iOS App
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS (unsigned)
+        # We build without codesigning because Sideloadly will do the signing for you locally.
+        run: flutter build ios --release --no-codesign
+
+      - name: Package into IPA
+        # An IPA is just a zip file containing a 'Payload' folder which holds the '.app' bundle
+        run: |
+          mkdir -p Payload
+          mv build/ios/iphoneos/Runner.app Payload/
+          zip -qq -r MyPulse360.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyPulse360-IPA
+          path: MyPulse360.ipa
