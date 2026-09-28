@@ -70,16 +70,17 @@ class _QueueStatusViewState extends ConsumerState<QueueStatusView> {
                 a.status != AppointmentStatus.completed,
           );
 
+          final isClinicClosed = ref.watch(clinicClosedProvider);
+
           if (todaysMatches.isEmpty) {
             return widget.fallback ?? Padding(
               padding: const EdgeInsets.only(top: 60),
               child: EmptyStateView(
                 title: 'No visit today',
-                message:
-                    'You have no appointment booked today. Do you want to book an appointment??',
+                message: isClinicClosed ? 'The clinic is currently closed.' : 'You have no appointment booked today. Do you want to book an appointment??',
                 icon: Icons.confirmation_number_outlined,
                 actionLabel: 'Yes, Book Appointment',
-                onAction: () => Navigator.of(context).push(
+                onAction: isClinicClosed ? null : () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const BookAppointmentPage()),
                 ),
               ),

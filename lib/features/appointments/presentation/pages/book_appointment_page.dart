@@ -59,6 +59,15 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
   Future<void> _book(String doctorId, String patientId) async {
     final slot = _selectedSlot;
     if (slot == null || _customTypeMissing) return;
+    
+    final isClinicClosed = ref.read(clinicClosedProvider);
+    if (isClinicClosed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('The clinic is currently closed. Booking is disabled.')),
+      );
+      return;
+    }
+
     setState(() => _booking = true);
     try {
       final repo = ref.read(appointmentsRepositoryProvider);
@@ -431,7 +440,7 @@ const SizedBox(height: 48),
                                       SizedBox(
                                         width: double.infinity,
                                         child: GestureDetector(
-                                          onTap: _selectedSlot == null || _booking 
+                                          onTap: isClinicClosed || _selectedSlot == null || _booking 
                                               ? null 
                                               : () => _book(doctor!.id, user.id),
                                           child: AnimatedContainer(
@@ -439,7 +448,7 @@ const SizedBox(height: 48),
                                             height: 56,
                                             decoration: BoxDecoration(
                                               borderRadius: BorderRadius.circular(28),
-                                              color: _selectedSlot == null 
+                                              color: isClinicClosed || _selectedSlot == null 
                                                   ? colors.surfaceMuted 
                                                   : colors.patientAccent,
                                             ),
@@ -454,7 +463,7 @@ const SizedBox(height: 48),
                                                     style: TextStyle(
                                                       fontSize: 16, 
                                                       fontWeight: FontWeight.w600,
-                                                      color: _selectedSlot == null || _selectedReason == null ? colors.textTertiary : Colors.white,
+                                                      color: isClinicClosed || _selectedSlot == null || _selectedReason == null ? colors.textTertiary : Colors.white,
                                                     ),
                                                   ),
                                             ),

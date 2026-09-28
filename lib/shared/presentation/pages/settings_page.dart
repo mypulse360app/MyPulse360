@@ -46,7 +46,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           final isClosed = ref.watch(clinicClosedProvider);
                           return SwitchListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('Clinic is Closed'),
+                            title: Text(isClosed ? 'Clinic is Closed' : 'Clinic is Open'),
                             subtitle: Text(isClosed ? 'The clinic is currently marked as closed.' : 'The clinic is currently open.'),
                             value: isClosed,
                             onChanged: (val) => ref.read(clinicClosedProvider.notifier).state = val,

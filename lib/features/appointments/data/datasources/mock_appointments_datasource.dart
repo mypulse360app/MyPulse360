@@ -59,7 +59,19 @@ class MockAppointmentsDataSource implements AppointmentsDataSource {
             )
             .toList()
           ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-    return list;
+
+    // Deduplicate by patient ID to prevent double queue entries if a patient cancels and re-books
+    final uniqueMap = <String, Appointment>{};
+    for (final a in list) {
+      if (!uniqueMap.containsKey(a.patientId) || a.scheduledAt.isAfter(uniqueMap[a.patientId]!.scheduledAt)) {
+        uniqueMap[a.patientId] = a;
+      }
+    }
+    
+    final uniqueList = uniqueMap.values.toList()
+      ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+
+    return uniqueList;
   }
 
   @override

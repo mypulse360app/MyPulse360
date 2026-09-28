@@ -36,6 +36,14 @@ class _ReschedulePageState extends ConsumerState<ReschedulePage> {
   }
 
   Future<void> _reschedule() async {
+    final isClinicClosed = ref.read(clinicClosedProvider);
+    if (isClinicClosed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('The clinic is currently closed. Rescheduling is disabled.')),
+      );
+      return;
+    }
+
     final slot = _selectedSlot;
     if (slot == null) return;
     setState(() => _saving = true);

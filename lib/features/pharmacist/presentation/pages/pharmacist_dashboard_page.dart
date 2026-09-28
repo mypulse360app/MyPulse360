@@ -200,10 +200,18 @@ class PharmacistDashboardPage extends ConsumerWidget {
 
               final combined = <Map<String, dynamic>>[];
               
-              // 1. Appointments (Pending / Checked-in) -> Log Vitals
+              // Deduplicate appointments by patientId to prevent double-names 
+              // if a patient cancels and re-books but both somehow arrive in the stream.
+              final uniqueAppointments = <String, Appointment>{};
               for (final a in appointments) {
-                // Skip if it's completed or cancelled
                 if (a.status == AppointmentStatus.completed || a.status == AppointmentStatus.cancelled) continue;
+                if (!uniqueAppointments.containsKey(a.patientId) || a.scheduledAt.isAfter(uniqueAppointments[a.patientId]!.scheduledAt)) {
+                  uniqueAppointments[a.patientId] = a;
+                }
+              }
+
+              // 1. Appointments (Pending / Checked-in) -> Log Vitals
+              for (final a in uniqueAppointments.values) {
                 combined.add({'type': 'appointment', 'data': a, 'time': a.scheduledAt});
               }
               

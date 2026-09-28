@@ -36,6 +36,8 @@ class _AppointmentsListPageState extends ConsumerState<AppointmentsListPage> {
 
     final appointmentsAsync = ref.watch(patientAppointmentsProvider(user.id));
 
+    final isClinicClosed = ref.watch(clinicClosedProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -48,14 +50,14 @@ class _AppointmentsListPageState extends ConsumerState<AppointmentsListPage> {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: FilledButton.icon(
-              onPressed: () => Navigator.of(context, rootNavigator: true).push(
+              onPressed: isClinicClosed ? null : () => Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(builder: (_) => const BookAppointmentPage()),
               ),
               icon: const Icon(Icons.add, size: 18),
               label: const Text('Book Now'),
               style: FilledButton.styleFrom(
-                backgroundColor: colors.patientAccent,
-                foregroundColor: Colors.white,
+                backgroundColor: isClinicClosed ? colors.surfaceMuted : colors.patientAccent,
+                foregroundColor: isClinicClosed ? colors.textTertiary : Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
               ),
             ),
@@ -83,10 +85,10 @@ class _AppointmentsListPageState extends ConsumerState<AppointmentsListPage> {
                     ? Center(
                         child: EmptyStateView(
                           title: 'No appointments yet',
-                          message: 'Book your first appointment to get started.',
+                          message: isClinicClosed ? 'The clinic is currently closed.' : 'Book your first appointment to get started.',
                           icon: Icons.calendar_month_outlined,
                           actionLabel: 'Book Appointment',
-                          onAction: () => Navigator.of(context, rootNavigator: true).push(
+                          onAction: isClinicClosed ? null : () => Navigator.of(context, rootNavigator: true).push(
                             MaterialPageRoute(
                               builder: (_) => const BookAppointmentPage(),
                             ),
