@@ -161,11 +161,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.monitor_heart_outlined,
-                        color: Colors.white,
-                        size: 32,
-                      ),
+                      child: Padding(padding: const EdgeInsets.all(12), child: Image.asset('assets/images/logo.png', color: Colors.white)),
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -289,3 +285,4 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 }
+

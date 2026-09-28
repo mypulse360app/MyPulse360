@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -59,17 +59,38 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
   Future<void> _book(String doctorId, String patientId) async {
     final slot = _selectedSlot;
     if (slot == null || _customTypeMissing) return;
-    final customText = _customTypeController.text.trim();
     setState(() => _booking = true);
     try {
-      await ref
-          .read(appointmentsRepositoryProvider)
-          .book(
+      final repo = ref.read(appointmentsRepositoryProvider);
+      
+      // Check if patient already has an appointment on this day
+      final existingAppts = await repo.getForPatient(patientId);
+      final hasApptOnDay = existingAppts.any((appt) => 
+        appt.status.name != 'cancelled' &&
+        appt.scheduledAt.year == slot.dateTime.year &&
+        appt.scheduledAt.month == slot.dateTime.month &&
+        appt.scheduledAt.day == slot.dateTime.day
+      );
+      
+      if (hasApptOnDay) {
+        if (!mounted) return;
+        setState(() => _booking = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You can only book one appointment per day.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+          )
+        );
+        return;
+      }
+
+      await repo.book(
             patientId: patientId,
             doctorId: doctorId,
             scheduledAt: slot.dateTime,
-            appointmentType: _isCustom ? customText : _type,
-            reasonForVisit: _isCustom ? customText : null,
+            appointmentType: _selectedReason ?? 'General Checkup',
+            reasonForVisit: _selectedReason,
           );
       ref.read(appointmentsRevisionProvider.notifier).state++;
       if (!mounted) return;

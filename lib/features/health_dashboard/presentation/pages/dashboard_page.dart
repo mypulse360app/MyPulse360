@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -19,8 +19,10 @@ import '../../../health_tips/data/health_tips_data.dart';
 import '../../../health_tips/presentation/widgets/health_tip_card.dart';
 import '../providers/health_dashboard_providers.dart';
 import '../widgets/next_appointment_banner.dart';
+import '../../../prescriptions/presentation/providers/prescriptions_providers.dart';
+import '../../../prescriptions/domain/entities/prescription.dart';
 
-/// P4 — Patient Dashboard: two big hero actions (Book Appointment,
+/// P4 Ã¢â‚¬â€ Patient Dashboard: two big hero actions (Book Appointment,
 /// Prescriptions) up top, a Health Tips strip, then next-appointment/
 /// reminders. Health Overview is no longer featured here.
 class DashboardPage extends ConsumerWidget {
@@ -202,20 +204,7 @@ class DashboardPage extends ConsumerWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 10),
-            Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: colors.border),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Medication reminders will appear here once you add prescriptions.',
-                  style: TextStyle(fontSize: 12, color: colors.textSecondary),
-                ),
-              ),
-            ),
+            _MedicationRemindersSection(patientId: user.id),
             const SizedBox(height: 24),
             Text(
               'Body Temperature',
@@ -321,6 +310,74 @@ class _PatientTemperatureSection extends ConsumerWidget {
 
   final String patientId;
 
+  Widget _buildCard({
+    required BuildContext context,
+    required String value,
+    required String subtitle,
+    bool isFever = false,
+  }) {
+    final colors = context.colors;
+    final primaryColor = isFever ? colors.danger : const Color(0xFFEAB308); // Yellow
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        gradient: RadialGradient(
+          center: Alignment.topLeft,
+          radius: 1.8,
+          colors: [
+            primaryColor,
+            primaryColor.withValues(alpha: 0.4),
+            const Color(0xFF101015),
+          ],
+          stops: const [0.0, 0.5, 1.0],
+        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withValues(alpha: 0.25),
+            blurRadius: 30,
+            spreadRadius: -10,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            'YOUR BODY TEMPERATURE',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+              color: Colors.white.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 60,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -1.5,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.white.withValues(alpha: 0.7),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tempAsync = ref.watch(patientLatestTemperatureProvider(patientId));
@@ -328,44 +385,23 @@ class _PatientTemperatureSection extends ConsumerWidget {
 
     return tempAsync.when(
       loading: () => Container(
-        height: 64,
+        height: 160,
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(32),
           border: Border.all(color: colors.border),
         ),
         child: const Center(
-          child: SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
       error: (error, stack) => const SizedBox.shrink(),
       data: (data) {
         if (data == null) {
-          return Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: colors.border),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Icon(Icons.thermostat_outlined, size: 20, color: colors.textSecondary),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'No temperature readings recorded yet. Your vitals will appear here after clinic check-in.',
-                      style: TextStyle(fontSize: 12, color: colors.textSecondary),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          return _buildCard(
+            context: context,
+            value: '-- °C',
+            subtitle: 'No readings recorded yet',
           );
         }
 
@@ -373,97 +409,132 @@ class _PatientTemperatureSection extends ConsumerWidget {
         final tempVal = rawTemp is num ? rawTemp.toDouble() : double.tryParse(rawTemp.toString()) ?? 36.8;
         final isFever = tempVal > 37.5;
         final device = data['device']?.toString() ?? 'Clinic Scanner';
+        final statusText = isFever ? 'Fever' : 'Normal';
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isFever ? colors.danger.withValues(alpha: 0.5) : colors.border,
-              width: isFever ? 1.5 : 1.0,
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: isFever
-                        ? colors.danger.withValues(alpha: 0.15)
-                        : colors.patientAccent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.thermostat_rounded,
-                    size: 24,
-                    color: isFever ? colors.danger : colors.patientAccent,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            tempVal.toStringAsFixed(1),
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                              color: colors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '°C',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: colors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Recorded via $device',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: colors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isFever
-                        ? colors.danger.withValues(alpha: 0.15)
-                        : const Color(0xFF10B981).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    isFever ? 'Fever' : 'Normal',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: isFever ? colors.danger : const Color(0xFF10B981),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        return _buildCard(
+          context: context,
+          value: '$tempVal°C',
+          subtitle: '$statusText • via $device',
+          isFever: isFever,
         );
       },
     );
   }
 }
+
+class _MedicationRemindersSection extends ConsumerWidget {
+  const _MedicationRemindersSection({required this.patientId});
+  final String patientId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prescriptions = ref.watch(patientPrescriptionsProvider(patientId));
+    final activeItems = prescriptions
+        .where((p) => p.status == PrescriptionStatus.active)
+        .expand((p) => p.items)
+        .toList();
+
+    if (activeItems.isEmpty) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: context.colors.border),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            'Medication reminders will appear here once you add prescriptions.',
+            style: TextStyle(fontSize: 12, color: context.colors.textSecondary),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: activeItems.take(3).map((item) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12.0),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(32),
+              gradient: RadialGradient(
+                center: Alignment.topLeft,
+                radius: 1.8,
+                colors: [
+                  const Color(0xFF10B981), // Emerald Green
+                  const Color(0xFF10B981).withValues(alpha: 0.4),
+                  const Color(0xFF101015),
+                ],
+                stops: const [0.0, 0.5, 1.0],
+              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                  blurRadius: 30,
+                  spreadRadius: -10,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'MEDICATION REMINDER',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.4,
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    Icon(Icons.medication, size: 16, color: Colors.white.withValues(alpha: 0.9)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(item.medicationName, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white)),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 14, color: Colors.white.withValues(alpha: 0.7)),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        "${item.strength} ${item.form} • ${item.quantity} ${item.unit}",
+                        style: const TextStyle(fontSize: 13, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.schedule, size: 14, color: Colors.white.withValues(alpha: 0.7)),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        "${item.frequency} - ${item.instructions}",
+                        style: const TextStyle(fontSize: 13, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+
+
 

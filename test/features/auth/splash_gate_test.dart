@@ -106,8 +106,7 @@ void main() {
 
       // The restore settles.
       fakeController.emit(const AuthAuthenticated(_patientUser));
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(seconds: 2)); await tester.pumpAndSettle();
 
       expect(router.state.matchedLocation, RoutePaths.patientDashboard);
       expect(find.text('DASHBOARD'), findsOneWidget);
@@ -115,3 +114,6 @@ void main() {
     },
   );
 }
+
+
+

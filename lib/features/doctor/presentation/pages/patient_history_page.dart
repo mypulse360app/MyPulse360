@@ -1,4 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,8 +31,8 @@ import '../widgets/sticky_submit_bar.dart';
 const _medicationNoteHint = 'e.g. Needs Metformin 500mg refill, 2x daily';
 
 /// Doctor-facing read view of a patient's prior visits, prescriptions, and
-/// health trends. The doctor's role is review-only â€” diagnosing from
-/// history, not documenting a consultation â€” so when opened from today's
+/// health trends. The doctor's role is review-only — diagnosing from
+/// history, not documenting a consultation — so when opened from today's
 /// queue ([appointmentId] set), the only action available is a plain
 /// "Mark as Seen" that hands the visit off to The clinic assistant to prescribe.
 class PatientHistoryPage extends ConsumerStatefulWidget {
@@ -196,7 +199,7 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
                               if (profile?.gender != null) profile!.gender!,
                               if (profile?.bloodType != null)
                                 'Type ${profile!.bloodType}',
-                            ].join(' Â· '),
+                            ].join(' · '),
                             style: TextStyle(
                               fontSize: 12,
                               color: colors.textSecondary,
@@ -231,8 +234,8 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              "Today's visit â€” ${pendingAppointment.appointmentType}"
-                              '${pendingAppointment.reasonForVisit != null ? " Â· ${pendingAppointment.reasonForVisit}" : ''}',
+                              "Today's visit — ${pendingAppointment.appointmentType}"
+                              '${pendingAppointment.reasonForVisit != null ? " · ${pendingAppointment.reasonForVisit}" : ''}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: colors.textPrimary,
@@ -254,7 +257,7 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
                               Icon(Icons.thermostat, size: 18, color: colors.danger),
                               const SizedBox(width: 8),
                               Text(
-                                'Body Temp: ${currentConsultation!.vitals.temperatureCelsius!.toStringAsFixed(1)} Â°C',
+                                'Body Temp: ${currentConsultation!.vitals.temperatureCelsius!.toStringAsFixed(1)} °C',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -283,7 +286,7 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Optional â€” a quick note on what this patient needs. The clinic assistant '
+                  'Optional — a quick note on what this patient needs. The clinic assistant '
                   'still enters the formal e-prescription.',
                   style: TextStyle(fontSize: 11.5, color: colors.textSecondary),
                 ),
@@ -625,16 +628,13 @@ class _AttachmentTile extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.download_rounded, size: 20),
           color: colors.textSecondary,
-          onPressed: () {
-             ScaffoldMessenger.of(context).showSnackBar(
-               SnackBar(content: Text('Simulated download: $name')),
-             );
-          },
+          onPressed: () async { try { if (kIsWeb) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Download simulated for Web: $name'))); return; } final directory = await getApplicationDocumentsDirectory(); final file = File('${directory.path}/$name'); await file.writeAsString('Simulated document content for $name'); if (context.mounted) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Document downloaded to ${file.path}'))); } } catch (e) { if (context.mounted) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error downloading: $e'))); } } },
         ),
       ],
     );
   }
 }
+
 
 
 

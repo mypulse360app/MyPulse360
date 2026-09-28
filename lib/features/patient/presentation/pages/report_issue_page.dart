@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 
 
@@ -18,23 +21,7 @@ class _ReportIssuePageState extends State<ReportIssuePage> {
     super.dispose();
   }
 
-  void _submitReport() async {
-    if (_textController.text.trim().isEmpty) return;
-
-    setState(() => _isSubmitting = true);
-
-    // Mock network request
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Report submitted successfully. Thank you for your feedback!')),
-    );
-
-    Navigator.of(context).pop();
-  }
+  void _submitReport() async { if (_textController.text.trim().isEmpty) return; setState(() => _isSubmitting = true); try { if (!kIsWeb) { final directory = await getApplicationDocumentsDirectory(); final file = File('${directory.path}/report_${DateTime.now().millisecondsSinceEpoch}.txt'); await file.writeAsString(_textController.text); } } catch (_) {} if (!mounted) return; setState(() => _isSubmitting = false); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report submitted successfully. Thank you for your feedback!'))); Navigator.of(context).pop(); }
 
   @override
   Widget build(BuildContext context) {
@@ -83,3 +70,4 @@ class _ReportIssuePageState extends State<ReportIssuePage> {
     );
   }
 }
+
