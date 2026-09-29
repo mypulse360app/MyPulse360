@@ -22,6 +22,9 @@ class PrescriptionsRepositoryImpl implements PrescriptionsRepository {
       _dataSource.updateStatus(prescriptionId, status);
 
   @override
+  Future<void> delete(String prescriptionId) => _dataSource.delete(prescriptionId);
+
+  @override
   List<DrugInteraction> checkInteractions(List<String> medicationNames) =>
       _dataSource.checkInteractions(medicationNames);
 }

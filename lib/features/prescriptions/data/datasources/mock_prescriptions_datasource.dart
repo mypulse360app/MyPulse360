@@ -89,6 +89,12 @@ class MockPrescriptionsDataSource implements PrescriptionsDataSource {
   }
 
   @override
+  Future<void> delete(String prescriptionId) async {
+    await simulateLatency();
+    _db.prescriptions.removeWhere((p) => p.id == prescriptionId);
+  }
+
+  @override
   List<DrugInteraction> checkInteractions(List<String> medicationNames) {
     final lower = medicationNames.map((m) => m.toLowerCase()).toSet();
     return _knownInteractions

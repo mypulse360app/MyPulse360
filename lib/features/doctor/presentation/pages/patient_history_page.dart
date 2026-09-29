@@ -446,20 +446,29 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
                 ],
               const SizedBox(height: 24),
               Text(
-                'Prescriptions',
+                'Doctor Prescriptions',
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               const SizedBox(height: 10),
-              if (prescriptions.isEmpty)
-                const EmptyStateView(
-                  title: 'No prescriptions on file',
-                  icon: Icons.medication_outlined,
-                )
-              else
-                for (final prescription in prescriptions) ...[
-                  PrescriptionCard(prescription: prescription),
-                  const SizedBox(height: 10),
-                ],
+              () {
+                final doctorPrescriptions = prescriptions
+                    .where((p) => p.source == PrescriptionSource.inApp)
+                    .toList();
+                if (doctorPrescriptions.isEmpty) {
+                  return const EmptyStateView(
+                    title: 'No doctor prescriptions on file',
+                    icon: Icons.medication_outlined,
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final prescription in doctorPrescriptions) ...[
+                      PrescriptionCard(prescription: prescription),
+                      const SizedBox(height: 10),
+                    ],
+                  ],
+                );
+              }(),
             ],
           ),
         ),

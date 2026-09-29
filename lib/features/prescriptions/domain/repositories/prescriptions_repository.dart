@@ -10,5 +10,7 @@ abstract class PrescriptionsRepository {
 
   Future<Prescription> updateStatus(String prescriptionId, PrescriptionStatus status);
 
+  Future<void> delete(String prescriptionId);
+
   List<DrugInteraction> checkInteractions(List<String> medicationNames);
 }

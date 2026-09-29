@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -506,7 +506,9 @@ class _MedicationRemindersSection extends ConsumerWidget {
                     const SizedBox(width: 7),
                     Expanded(
                       child: Text(
-                        "${item.strength} ${item.form} • ${item.quantity} ${item.unit}",
+                        item.strength.isNotEmpty
+                            ? "${item.strength} • ${item.packagingType} (${item.quantity} ${item.unit})"
+                            : "${item.packagingType} (${item.quantity} ${item.unit})",
                         style: const TextStyle(fontSize: 13, color: Colors.white),
                       ),
                     ),
@@ -520,7 +522,9 @@ class _MedicationRemindersSection extends ConsumerWidget {
                     const SizedBox(width: 7),
                     Expanded(
                       child: Text(
-                        "${item.frequency} - ${item.instructions}",
+                        item.instructions.isNotEmpty && item.instructions != 'As directed'
+                            ? "${item.frequency} • ${item.instructions}"
+                            : item.frequency,
                         style: const TextStyle(fontSize: 13, color: Colors.white),
                       ),
                     ),

@@ -129,7 +129,11 @@ class SupabasePrescriptionsDataSource implements PrescriptionsDataSource {
         'consultation_id': prescription.consultationId,
         'status': statusStr,
         'notes': prescription.items.map((i) => '${i.medicationName} ${i.strength}').join(', '),
-        'source': isScanned ? 'scanned_external' : 'in_app',
+        'source': switch (prescription.source) {
+          PrescriptionSource.scannedExternal => 'scanned_external',
+          PrescriptionSource.manualExternal => 'manual_external',
+          PrescriptionSource.inApp => 'in_app',
+        },
         'external_doctor_name': prescription.externalDoctorName,
         'issued_date': prescription.issuedDate.toIso8601String(),
         'expiry_date': prescription.expiryDate.toIso8601String(),
@@ -137,7 +141,8 @@ class SupabasePrescriptionsDataSource implements PrescriptionsDataSource {
 
       if (prescription.items.isNotEmpty) {
         final itemsPayload = prescription.items.map((item) {
-          final itemId = item.id.isEmpty ? generateId() : item.id;
+          final isUuid = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$').hasMatch(item.id);
+          final itemId = isUuid ? item.id : generateId();
           return {
             'id': itemId,
             'prescription_id': rxId,
@@ -159,8 +164,10 @@ class SupabasePrescriptionsDataSource implements PrescriptionsDataSource {
         // Batch insert all items at once in a single roundtrip
         await _client.from('prescription_items').insert(itemsPayload).timeout(const Duration(seconds: 4));
       }
-    } catch (_) {
-      // Local cache already holds the created prescription for this session
+    } catch (e) {
+      // Log error for debugging while cache serves existing items
+      // ignore: avoid_print
+      print('Supabase prescription create error: $e');
     }
 
     return created;
@@ -200,6 +207,36 @@ class SupabasePrescriptionsDataSource implements PrescriptionsDataSource {
   }
 
   @override
+  Future<void> delete(String prescriptionId) async {
+    // 1. Immediately replace cache with NEW list instances so Riverpod triggers a state change
+    for (final key in _cachedPrescriptions.keys.toList()) {
+      final list = _cachedPrescriptions[key] ?? [];
+      _cachedPrescriptions[key] = list.where((p) => p.id != prescriptionId).toList();
+    }
+
+    // Allow future re-fetch to hit database
+    _fetchedPatients.clear();
+
+    // 2. Delete from Supabase (delete items first in case cascade is missing)
+    try {
+      await _client
+          .from('prescription_items')
+          .delete()
+          .eq('prescription_id', prescriptionId)
+          .timeout(const Duration(seconds: 4));
+
+      await _client
+          .from('prescriptions')
+          .delete()
+          .eq('id', prescriptionId)
+          .timeout(const Duration(seconds: 4));
+    } catch (e) {
+      // ignore: avoid_print
+      print('Supabase prescription delete error: $e');
+    }
+  }
+
+  @override
   List<DrugInteraction> checkInteractions(List<String> medicationNames) {
     if (medicationNames.length < 2) return const [];
     final lower = medicationNames.map((m) => m.toLowerCase()).toSet();
@@ -225,9 +262,11 @@ class SupabasePrescriptionsDataSource implements PrescriptionsDataSource {
     };
 
     final sourceStr = r['source'] as String? ?? 'in_app';
-    final source = sourceStr == 'scanned_external'
-        ? PrescriptionSource.scannedExternal
-        : PrescriptionSource.inApp;
+    final source = switch (sourceStr) {
+      'scanned_external' => PrescriptionSource.scannedExternal,
+      'manual_external' => PrescriptionSource.manualExternal,
+      _ => PrescriptionSource.inApp,
+    };
 
     final rawItems = r['prescription_items'] as List? ?? [];
     final items = rawItems.map((itemRow) {

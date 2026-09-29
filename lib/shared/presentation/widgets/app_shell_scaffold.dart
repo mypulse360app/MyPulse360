@@ -338,23 +338,23 @@ class _NavTab extends StatelessWidget {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
         padding: selected
-            ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
-            : const EdgeInsets.all(12),
+            ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+            : const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: selected ? activeColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(displayIcon, size: 24, color: selected ? onActiveColor : _inactive),
+            Icon(displayIcon, size: 21, color: selected ? onActiveColor : _inactive),
             if (selected) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: 5),
               Text(
                 displayLabel,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: onActiveColor,
                 ),

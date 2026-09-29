@@ -6,6 +6,7 @@ import '../../../../config/theme/app_theme.dart';
 import '../../../../shared/presentation/widgets/large_title_app_bar.dart';
 import '../../../../shared/presentation/widgets/primary_button.dart';
 import '../../../../shared/utils/date_formatters.dart';
+import '../../../../shared/utils/id_generator.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/prescription.dart';
 import '../../domain/entities/prescription_item.dart';
@@ -97,7 +98,7 @@ class _AddPrescriptionManuallyPageState extends ConsumerState<AddPrescriptionMan
       if (name.isEmpty) continue;
       items.add(
         PrescriptionItem(
-          id: 'manual-item-$i',
+          id: generateId(),
           medicationName: name,
           strength: c.strength.text.trim(),
           form: c.form,
@@ -287,7 +288,7 @@ class _AddPrescriptionManuallyPageState extends ConsumerState<AddPrescriptionMan
     final textMuted = isDark ? Colors.white60 : colors.textSecondary;
     final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : colors.border;
     final bgGradientColors = isDark 
-        ? [const Color(0xFF4A3BB1), const Color(0xFF4A3BB1).withValues(alpha: 0.5), const Color(0xFF101015)]
+        ? [const Color(0xFF10B981), const Color(0xFF10B981).withValues(alpha: 0.4), const Color(0xFF101015)]
         : [colors.surfaceMuted, colors.surfaceSubtle, colors.surfaceSubtle];
 
     return Container(
@@ -303,7 +304,7 @@ class _AddPrescriptionManuallyPageState extends ConsumerState<AddPrescriptionMan
         border: Border.all(color: borderColor),
         boxShadow: isDark ? [
           BoxShadow(
-            color: const Color(0xFF4A3BB1).withValues(alpha: 0.25),
+            color: const Color(0xFF10B981).withValues(alpha: 0.25),
             blurRadius: 30,
             spreadRadius: -10,
             offset: const Offset(0, 10),

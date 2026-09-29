@@ -8,6 +8,7 @@ import '../../../../config/theme/app_theme.dart';
 import '../../../../shared/presentation/widgets/large_title_app_bar.dart';
 import '../../../../shared/presentation/widgets/primary_button.dart';
 import '../../../../shared/utils/date_formatters.dart';
+import '../../../../shared/utils/id_generator.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/prescription.dart';
 import '../../domain/entities/prescription_item.dart';
@@ -36,11 +37,11 @@ class _MedFormControllers {
         frequency = TextEditingController(text: item.frequency),
         durationDays = TextEditingController(text: item.durationDays.toString()),
         instructions = TextEditingController(text: item.instructions),
+        unitQuantity = TextEditingController(text: item.unitQuantity.toString()),
         form = item.form,
         expiryDate = item.expiryDate,
         refillsAllowed = item.refillsAllowed,
-        packagingType = item.packagingType,
-        unitQuantity = TextEditingController(text: item.unitQuantity.toString());
+        packagingType = item.packagingType;
 
   final TextEditingController name;
   final TextEditingController strength;
@@ -51,8 +52,8 @@ class _MedFormControllers {
   final TextEditingController instructions;
   final TextEditingController unitQuantity;
   DateTime? expiryDate;
-  final String form;
-  final int refillsAllowed;
+  String form;
+  int refillsAllowed;
   String packagingType;
 
   void dispose() {
@@ -284,7 +285,7 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
       if (name.isEmpty) continue;
       items.add(
         PrescriptionItem(
-          id: 'scanned-item-$i',
+          id: generateId(),
           medicationName: name,
           strength: c.strength.text.trim(),
           form: c.form,
@@ -624,16 +625,16 @@ class _ScanPrescriptionPageState extends ConsumerState<ScanPrescriptionPage> {
           center: Alignment.topLeft,
           radius: 2.0,
           colors: [
-            const Color(0xFF4A3BB1),
-            const Color(0xFF4A3BB1).withValues(alpha: 0.5),
+            const Color(0xFF10B981),
+            const Color(0xFF10B981).withValues(alpha: 0.4),
             const Color(0xFF101015),
           ],
           stops: const [0.0, 0.5, 1.0],
         ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4A3BB1).withValues(alpha: 0.25),
+            color: const Color(0xFF10B981).withValues(alpha: 0.25),
             blurRadius: 30,
             spreadRadius: -10,
             offset: const Offset(0, 10),
