@@ -75,7 +75,8 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
       // Check if patient already has an appointment on this day
       final existingAppts = await repo.getForPatient(patientId);
       final hasApptOnDay = existingAppts.any((appt) => 
-        appt.status.name != 'cancelled' &&
+        appt.status != AppointmentStatus.cancelled &&
+        appt.status != AppointmentStatus.completed &&
         appt.scheduledAt.year == slot.dateTime.year &&
         appt.scheduledAt.month == slot.dateTime.month &&
         appt.scheduledAt.day == slot.dateTime.day

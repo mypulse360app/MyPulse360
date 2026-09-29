@@ -743,7 +743,7 @@ class _ProcessPrescriptionPageState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (!canSubmit) ...[
+              if (consultation.status == ConsultationStatus.completed && !canSubmit) ...[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -761,31 +761,47 @@ class _ProcessPrescriptionPageState
               ],
               SizedBox(
                 width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: canSubmit && !_submitting ? () => _submit(consultation) : null,
-                  icon: _submitting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.verified_rounded, size: 18),
-                  label: Text(
-                    _submitting
-                        ? 'Processing Dispense...'
-                        : 'Verify & Dispense (${_items.length} ${_items.length == 1 ? 'Item' : 'Items'})',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: colors.clinicianAccent,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: colors.surfaceSubtle,
-                    disabledForegroundColor: colors.textTertiary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                ),
+                child: consultation.status != ConsultationStatus.completed
+                    ? FilledButton.icon(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                        label: const Text(
+                          'Vitals Logged - Return to Dashboard',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colors.clinicianAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                      )
+                    : FilledButton.icon(
+                        onPressed: canSubmit && !_submitting ? () => _submit(consultation) : null,
+                        icon: _submitting
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.verified_rounded, size: 18),
+                        label: Text(
+                          _submitting
+                              ? 'Processing Dispense...'
+                              : 'Verify & Dispense (${_items.length} ${_items.length == 1 ? 'Item' : 'Items'})',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colors.clinicianAccent,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: colors.surfaceSubtle,
+                          disabledForegroundColor: colors.textTertiary,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                      ),
               ),
+
             ],
           ),
         ),

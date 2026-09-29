@@ -22,6 +22,7 @@ import '../../../patient/presentation/providers/patient_providers.dart';
 
 import '../providers/doctor_providers.dart';
 import '../widgets/patient_queue_tile.dart';
+import '../../../pharmacist/presentation/providers/pharmacist_providers.dart';
 
 /// D1 — Doctor Dashboard, redrawn to match the desktop reference: header
 /// banner, stat cards, a patient queue with a "Start Visit" CTA on the
@@ -109,7 +110,12 @@ class _DoctorDashboardPageState extends ConsumerState<DoctorDashboardPage> {
                 )
                 .toList();
 
+            final liveConsultations = ref.watch(realtimeConsultationsStreamProvider).valueOrNull ?? [];
+            
             final filteredQueue = queue.where((a) {
+              final hasConsultation = liveConsultations.any((c) => c.appointmentId == a.id);
+              if (!hasConsultation && a.status != AppointmentStatus.completed) return false;
+
               if (_selectedFilter == QueueFilter.confirmed) {
                 return a.status == AppointmentStatus.confirmed;
               }

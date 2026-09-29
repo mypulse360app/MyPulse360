@@ -66,10 +66,6 @@ class MockDoctorDataSource implements DoctorDataSource {
     );
     _db.upsertConsultation(completed);
 
-    final apptIndex = _db.appointments.indexWhere((a) => a.id == consultation.appointmentId);
-    if (apptIndex != -1) {
-      _db.appointments[apptIndex] = _db.appointments[apptIndex].copyWith(status: AppointmentStatus.completed);
-    }
     return completed;
   }
 
