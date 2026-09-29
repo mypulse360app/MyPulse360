@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -20,7 +20,7 @@ import '../../../prescriptions/domain/entities/prescription.dart';
 import '../../../prescriptions/presentation/providers/prescriptions_providers.dart';
 import '../../../doctor/domain/entities/consultation.dart';
 
-/// F1 — Pharmacist Dashboard: queue ordered by wait, amber past 30 min.
+/// F1 â€” Pharmacist Dashboard: queue ordered by wait, amber past 30 min.
 class PharmacistDashboardPage extends ConsumerWidget {
   const PharmacistDashboardPage({super.key});
 
@@ -129,7 +129,7 @@ class PharmacistDashboardPage extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text('Live clinic flow — Check-in, vitals, and dispensing in one queue.', style: TextStyle(fontSize: 13, color: colors.textSecondary)),
+                      Text('Live clinic flow â€” Check-in, vitals, and dispensing in one queue.', style: TextStyle(fontSize: 13, color: colors.textSecondary)),
                     ],
                   ),
                 ),
@@ -214,21 +214,7 @@ class PharmacistDashboardPage extends ConsumerWidget {
               for (final a in uniqueAppointments.values) {
                 combined.add({'type': 'appointment', 'data': a, 'time': a.scheduledAt});
               }
-              
-              // 2. Awaiting Prescription (Consultation completed, needs medication/verification)
-              for (final c in awaiting) {
-                final appt = appointments.where((a) => a.id == c.appointmentId).firstOrNull;
-                combined.add({'type': 'awaiting', 'data': c, 'time': appt?.scheduledAt ?? DateTime.now(), 'appt': appt});
-              }
-              
-              // 3. Prescriptions (Queue for verification/dispensing - ONLY ACTIVE, NOT DISPENSED!)
-              final activeQueue = queue.where((p) =>
-                  p.status == PrescriptionStatus.active &&
-                  !dispensedIds.contains(p.consultationId)
-              ).toList();
-              for (final p in activeQueue) {
-                combined.add({'type': 'prescription', 'data': p, 'time': p.issuedDate});
-              }
+              // Only keep appointments for vitals in this dashboard.
               
               combined.sort((a, b) => (a['time'] as DateTime).compareTo(b['time'] as DateTime));
               
@@ -282,35 +268,7 @@ class PharmacistDashboardPage extends ConsumerWidget {
                             children: [
                               AvatarWidget(name: name, size: 40, color: colors.clinicianAccent),
                               const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            appt.status == AppointmentStatus.completed ? 'Completed' : 'Checked-in',
-                                            style: const TextStyle(fontSize: 10, color: Colors.white70),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${DateFormatters.time(appt.scheduledAt)} · ${appt.appointmentType}',
-                                      style: TextStyle(fontSize: 13, color: colors.textSecondary),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 decoration: BoxDecoration(
@@ -355,162 +313,8 @@ class PharmacistDashboardPage extends ConsumerWidget {
                         ),
                       ),
                     );
-                  } else if (item['type'] == 'awaiting') {
-                    final c = item['data'] as Consultation;
-                    final appt = item['appt'] as Appointment?;
-                    final mockUser = db.userById(c.patientId);
-                    final name = mockUser?.fullName ?? ref.watch(userProfileProvider(c.patientId)).valueOrNull?.fullName ?? 'Patient';
-                    
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: InkWell(
-                        onTap: () => context.push(RoutePaths.processPrescription(c.id)),
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: colors.border),
-                          ),
-                          child: Row(
-                            children: [
-                              AvatarWidget(name: name, size: 40, color: colors.clinicianAccent),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            'Consultation Completed',
-                                            style: TextStyle(fontSize: 10, color: Colors.blue[400]),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      appt != null ? '${DateFormatters.time(appt.scheduledAt)} · ${appt.appointmentType}' : 'No appointment details',
-                                      style: TextStyle(fontSize: 13, color: colors.textSecondary),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: colors.clinicianAccent.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.medication, size: 16, color: colors.clinicianAccent),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Process Prescription',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: colors.clinicianAccent,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
                   } else {
-                    final rx = item['data'] as Prescription;
-                    final mockUser = db.userById(rx.patientId);
-                    final name = mockUser?.fullName ?? ref.watch(userProfileProvider(rx.patientId)).valueOrNull?.fullName ?? 'Patient';
-                    final medNames = rx.items.map((i) => i.medicationName).join(', ');
-                    
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: InkWell(
-                        onTap: () => context.push(RoutePaths.verify(rx.id)),
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: colors.border),
-                          ),
-                          child: Row(
-                            children: [
-                              AvatarWidget(name: name, size: 40, color: colors.clinicianAccent),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.green.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            'Prescription Ready',
-                                            style: TextStyle(fontSize: 10, color: Colors.green[400]),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Meds: $medNames',
-                                      style: TextStyle(fontSize: 13, color: colors.textSecondary),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: colors.clinicianAccent.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.receipt_long, size: 16, color: colors.clinicianAccent),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Verify & Dispense',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: colors.clinicianAccent,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
+                    return const SizedBox.shrink();
                   }
                 }).toList(),
               );

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../config/env/env.dart';
@@ -39,9 +39,10 @@ class _ProcessPrescriptionPageState
   final Set<int> _checked = {};
   bool _submitting = false;
   bool _initializedFromNotes = false;
+    bool _vitalsInitialized = false;
 
   final _vitalsTempController = TextEditingController();
-  bool _isEditingVitals = false;
+  
   bool _savingVitals = false;
   late final DateTime _pageOpenedAt;
   Map<String, dynamic>? _detectedVitalsScan;
@@ -74,8 +75,9 @@ class _ProcessPrescriptionPageState
         temperatureLogId: _detectedVitalsScan?['id']?.toString(),
       );
       ref.read(appointmentsRevisionProvider.notifier).state++;
+        ref.invalidate(consultationProvider(consultation.id));
       setState(() {
-        _isEditingVitals = false;
+        
         _savingVitals = false;
       });
       if (!mounted) return;
@@ -224,6 +226,7 @@ class _ProcessPrescriptionPageState
           
       ref.read(prescriptionsRevisionProvider.notifier).state++;
       ref.read(appointmentsRevisionProvider.notifier).state++;
+        ref.invalidate(consultationProvider(consultation.id));
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -787,8 +790,8 @@ class _ProcessPrescriptionPageState
                             : const Icon(Icons.verified_rounded, size: 18),
                         label: Text(
                           _submitting
-                              ? 'Processing Dispense...'
-                              : 'Verify & Dispense (${_items.length} ${_items.length == 1 ? 'Item' : 'Items'})',
+                              ? 'Completing...'
+                              : 'Patient Complete',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                         style: FilledButton.styleFrom(
@@ -829,257 +832,207 @@ class _ProcessPrescriptionPageState
       ),
     );
   }
-  Widget _buildVitalsCard({
-    required BuildContext context,
-    required Consultation consultation,
-    required String patientName,
-  }) {
-    final colors = context.colors;
-    final recordedTemp = consultation.vitals.temperatureCelsius;
-    final showEditor = _isEditingVitals || recordedTemp == null;
+      Widget _buildVitalsCard({
+      required BuildContext context,
+      required Consultation consultation,
+      required String patientName,
+    }) {
+      final colors = context.colors;
+      final recordedTemp = consultation.vitals.temperatureCelsius;
+      
+      if (recordedTemp != null && !_vitalsInitialized) {
+        _vitalsTempController.text = recordedTemp.toString();
+        _vitalsInitialized = true;
+      }
+      
+      // We always show the editor so the user can continually adjust it if needed
+      
 
-    // Listen to latest unassigned scan (scoped strictly to unclaimed IoT scans)
-    final tempScan = ref.watch(latestTemperatureLogProvider).valueOrNull;
-    if (showEditor && tempScan != null) {
-      final scanTime = tempScan['created_at'] as DateTime?;
-      final cutoff = _pageOpenedAt.subtract(const Duration(minutes: 2));
-      if (scanTime != null && scanTime.isAfter(cutoff)) {
-        if (_detectedVitalsScan == null || _detectedVitalsScan!['created_at'] != scanTime) {
-          _detectedVitalsScan = tempScan;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && _vitalsTempController.text.isEmpty) {
-              _vitalsTempController.text = tempScan['temperature'].toString();
-            }
-          });
+      // Listen to latest unassigned scan (scoped strictly to unclaimed IoT scans)
+      final tempScan = ref.watch(latestTemperatureLogProvider).valueOrNull;
+      if (tempScan != null) {
+        final scanTime = tempScan['created_at'] as DateTime?;
+        final cutoff = _pageOpenedAt.subtract(const Duration(minutes: 2));
+        if (scanTime != null && scanTime.isAfter(cutoff)) {
+          if (_detectedVitalsScan == null || _detectedVitalsScan!['created_at'] != scanTime) {
+            _detectedVitalsScan = tempScan;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _vitalsTempController.text = tempScan['temperature'].toString();
+              }
+            });
+          }
         }
       }
-    }
 
-    final isFever = recordedTemp != null && recordedTemp > 37.5;
+      final isFever = recordedTemp != null && recordedTemp > 37.5;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: recordedTemp != null
-              ? (isFever ? colors.danger.withValues(alpha: 0.5) : colors.border)
-              : Colors.amber.withValues(alpha: 0.4),
-          width: isFever ? 1.5 : 1.0,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: recordedTemp != null
-                      ? (isFever ? colors.danger.withValues(alpha: 0.15) : colors.clinicianAccent.withValues(alpha: 0.15))
-                      : Colors.amber.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.thermostat_rounded,
-                  size: 20,
-                  color: recordedTemp != null
-                      ? (isFever ? colors.danger : colors.clinicianAccent)
-                      : Colors.amber,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'PATIENT VITALS & TEMPERATURE',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
-                        color: colors.clinicianAccent,
-                      ),
-                    ),
-                    Text(
-                      'Measured upon clinic check-in',
-                      style: TextStyle(fontSize: 11, color: colors.textTertiary),
-                    ),
-                  ],
-                ),
-              ),
-              if (recordedTemp != null && !showEditor)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: (isFever ? colors.danger : const Color(0xFF10B981)).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    isFever ? 'Fever (>37.5°C)' : 'Normal',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: isFever ? colors.danger : const Color(0xFF10B981),
-                    ),
-                  ),
-                )
-              else
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
-                  ),
-                  child: const Text(
-                    'Pending Vitals',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber,
-                    ),
-                  ),
-                ),
-            ],
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: recordedTemp != null
+                ? (isFever ? colors.danger.withValues(alpha: 0.5) : colors.border)
+                : Colors.amber.withValues(alpha: 0.4),
+            width: isFever ? 1.5 : 1.0,
           ),
-          const SizedBox(height: 14),
-          if (!showEditor) ...[
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
               children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: recordedTemp != null
+                        ? (isFever ? colors.danger.withValues(alpha: 0.15) : colors.clinicianAccent.withValues(alpha: 0.15))
+                        : Colors.amber.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.thermostat_rounded,
+                    size: 20,
+                    color: recordedTemp != null
+                        ? (isFever ? colors.danger : colors.clinicianAccent)
+                        : Colors.amber,
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        recordedTemp.toStringAsFixed(1),
+                        'PATIENT VITALS & TEMPERATURE',
                         style: TextStyle(
-                          fontSize: 30,
+                          fontSize: 11,
                           fontWeight: FontWeight.w800,
-                          color: isFever ? colors.danger : colors.textPrimary,
+                          letterSpacing: 0.6,
+                          color: colors.clinicianAccent,
                         ),
                       ),
-                      const SizedBox(width: 4),
                       Text(
-                        '°C',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: colors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Recorded for $patientName',
-                          style: TextStyle(fontSize: 12, color: colors.textSecondary),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        'Measured upon clinic check-in',
+                        style: TextStyle(fontSize: 11, color: colors.textTertiary),
                       ),
                     ],
                   ),
                 ),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    _vitalsTempController.text = recordedTemp.toStringAsFixed(1);
-                    setState(() => _isEditingVitals = true);
-                  },
-                  icon: const Icon(Icons.edit_outlined, size: 14),
-                  label: const Text('Edit / Re-scan'),
-                  style: OutlinedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    foregroundColor: colors.clinicianAccent,
-                    side: BorderSide(color: colors.clinicianAccent.withValues(alpha: 0.4)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                if (recordedTemp != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Vitals Recorded',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF10B981),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+                    ),
+                    child: const Text(
+                      'Pending Vitals',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amber,
+                      ),
+                    ),
                   ),
-                ),
               ],
             ),
-          ] else ...[
+            const SizedBox(height: 14),
+            
+            // IoT indicator
             if (_detectedVitalsScan != null)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.sensors, color: Color(0xFF10B981), size: 18),
+                    const Icon(Icons.sensors, size: 14, color: Color(0xFF10B981)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Scanner detected: ${_detectedVitalsScan!['temperature']} °C from ${_detectedVitalsScan!['device']}',
-                        style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w600, fontSize: 12),
+                        'Detected  °C from lobby scanner!',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF10B981), fontWeight: FontWeight.w500),
                       ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        _vitalsTempController.text = _detectedVitalsScan!['temperature'].toString();
-                      },
-                      style: TextButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        foregroundColor: const Color(0xFF10B981),
-                      ),
-                      child: const Text('Use Scan', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
               )
             else
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                  color: Colors.amber.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.2)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.sensors, color: Colors.amber, size: 18),
-                    SizedBox(width: 8),
+                    Icon(Icons.sensors, size: 14, color: Colors.amber.shade700),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Ready for IoT lobby scanner or enter manually below',
-                        style: TextStyle(color: Colors.amber, fontWeight: FontWeight.w500, fontSize: 12),
+                        style: TextStyle(fontSize: 12, color: Colors.amber.shade700),
                       ),
                     ),
                   ],
                 ),
               ),
+
+            // Input Row
             Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _vitalsTempController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      labelText: 'Body Temp (°C)',
-                      hintText: 'e.g. 36.8',
-                      isDense: true,
-                      prefixIcon: const Icon(Icons.thermostat_outlined, size: 18),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: colors.border),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                    child: TextField(
+                      controller: _vitalsTempController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: TextStyle(fontSize: 18, color: colors.textPrimary, fontWeight: FontWeight.w600),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        labelText: 'Body Temp (°C)',
+                        labelStyle: TextStyle(fontSize: 12),
+                        hintText: 'e.g. 36.8',
+                        isDense: true,
+                        prefixIcon: Icon(Icons.thermostat_outlined, size: 18),
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 10),
-                if (recordedTemp != null) ...[
-                  TextButton(
-                    onPressed: () => setState(() => _isEditingVitals = false),
-                    child: Text('Cancel', style: TextStyle(color: colors.textSecondary)),
-                  ),
-                  const SizedBox(width: 6),
-                ],
                 FilledButton.icon(
                   onPressed: _savingVitals ? null : () => _saveVitals(consultation),
                   icon: _savingVitals
@@ -1088,10 +1041,10 @@ class _ProcessPrescriptionPageState
                           height: 14,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : const Icon(Icons.check, size: 16),
-                  label: Text(_savingVitals ? 'Saving...' : 'Save Vitals'),
+                      : (recordedTemp != null ? const Icon(Icons.update, size: 16) : const Icon(Icons.check, size: 16)),
+                  label: Text(_savingVitals ? 'Saving...' : (recordedTemp != null ? 'Update Vitals' : 'Save Vitals')),
                   style: FilledButton.styleFrom(
-                    backgroundColor: colors.clinicianAccent,
+                    backgroundColor: recordedTemp != null ? colors.textSecondary : colors.clinicianAccent,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
@@ -1099,8 +1052,8 @@ class _ProcessPrescriptionPageState
               ],
             ),
           ],
-        ],
-      ),
-    );
-  }
+        ),
+      );
+    }
+
 }

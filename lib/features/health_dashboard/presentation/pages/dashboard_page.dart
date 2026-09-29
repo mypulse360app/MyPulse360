@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -22,7 +22,7 @@ import '../widgets/next_appointment_banner.dart';
 import '../../../prescriptions/presentation/providers/prescriptions_providers.dart';
 import '../../../prescriptions/domain/entities/prescription.dart';
 
-/// P4 Ã¢â‚¬â€ Patient Dashboard: two big hero actions (Book Appointment,
+/// P4 — Patient Dashboard: two big hero actions (Book Appointment,
 /// Prescriptions) up top, a Health Tips strip, then next-appointment/
 /// reminders. Health Overview is no longer featured here.
 class DashboardPage extends ConsumerWidget {

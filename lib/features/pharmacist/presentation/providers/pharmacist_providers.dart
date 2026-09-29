@@ -7,6 +7,7 @@ import '../../../appointments/domain/entities/appointment.dart';
 import '../../../appointments/presentation/providers/appointments_providers.dart';
 import '../../../doctor/domain/entities/consultation.dart';
 import '../../../prescriptions/domain/entities/prescription.dart';
+
 import '../../../prescriptions/presentation/providers/prescriptions_providers.dart';
 import '../../data/datasources/mock_pharmacist_datasource.dart';
 import '../../data/datasources/supabase_pharmacist_datasource.dart';
@@ -14,30 +15,27 @@ import '../../data/repositories/pharmacist_repository_impl.dart';
 import '../../domain/entities/pharmacist_profile.dart';
 import '../../domain/repositories/pharmacist_repository.dart';
 
-final supabasePharmacistDataSourceProvider = Provider<SupabasePharmacistDataSource>((ref) {
+final mockPharmacistDataSourceProvider = Provider((ref) {
+  return MockPharmacistDataSource(ref.watch(mockDatabaseProvider));
+});
+
+final supabasePharmacistDataSourceProvider = Provider((ref) {
   return SupabasePharmacistDataSource(ref.watch(supabaseClientProvider));
 });
 
 final pharmacistRepositoryProvider = Provider<PharmacistRepository>((ref) {
-  final ds = Env.isMockMode
-      ? MockPharmacistDataSource(ref.watch(mockDatabaseProvider))
-      : ref.watch(supabasePharmacistDataSourceProvider);
-  return PharmacistRepositoryImpl(ds);
+  if (Env.isMockMode) {
+    return PharmacistRepositoryImpl(ref.watch(mockPharmacistDataSourceProvider));
+  } else {
+    return PharmacistRepositoryImpl(ref.watch(supabasePharmacistDataSourceProvider));
+  }
 });
 
-final pharmacistProfileProvider = Provider.family<PharmacistProfile?, String>((ref, pharmacistId) {
+final pharmacistProfileProvider = Provider.family<PharmacistProfile?, String>((
+  ref,
+  pharmacistId,
+) {
   return ref.watch(pharmacistRepositoryProvider).getProfile(pharmacistId);
-});
-
-final pharmacyQueueProvider = Provider.family<List<Prescription>, String>((ref, pharmacyId) {
-  ref.watch(prescriptionsRevisionProvider);
-  return ref.watch(pharmacistRepositoryProvider).getQueue(pharmacyId);
-});
-
-final awaitingPrescriptionProvider = Provider<List<Consultation>>((ref) {
-  ref.watch(prescriptionsRevisionProvider);
-  ref.watch(appointmentsRevisionProvider);
-  return ref.watch(pharmacistRepositoryProvider).getAwaitingPrescription();
 });
 
 final pharmacistTodaysAppointmentsProvider = Provider<List<Appointment>>((ref) {
@@ -54,14 +52,61 @@ final realtimeAppointmentsStreamProvider = StreamProvider.autoDispose<List<Appoi
   return ref.watch(supabasePharmacistDataSourceProvider).watchTodaysAppointments();
 });
 
+final _consultsStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+  if (Env.isMockMode) return Stream.value([]);
+  return ref.watch(supabaseClientProvider).from('consultations').stream(primaryKey: ['id']);
+});
+
+final _tempsStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+  if (Env.isMockMode) return Stream.value([]);
+  return ref.watch(supabaseClientProvider).from('temperature_logs').stream(primaryKey: ['id']);
+});
+
 /// Supabase Realtime stream of consultations
-final realtimeConsultationsStreamProvider = StreamProvider.autoDispose<List<Consultation>>((ref) {
+final realtimeConsultationsStreamProvider = Provider.autoDispose<AsyncValue<List<Consultation>>>((ref) {
   if (Env.isMockMode) {
     ref.watch(appointmentsRevisionProvider);
     final db = ref.watch(mockDatabaseProvider);
-    return Stream.value(db.consultations);
+    return AsyncData(db.consultations);
   }
-  return ref.watch(supabasePharmacistDataSourceProvider).watchConsultations();
+  
+  final consultsAsync = ref.watch(_consultsStreamProvider);
+  final tempsAsync = ref.watch(_tempsStreamProvider);
+  
+  if (consultsAsync.isLoading) return const AsyncLoading();
+  if (consultsAsync.hasError) return AsyncError(consultsAsync.error!, consultsAsync.stackTrace!);
+  
+  final consults = consultsAsync.valueOrNull ?? [];
+  final temps = List<Map<String, dynamic>>.from(tempsAsync.valueOrNull ?? []);
+  
+  temps.sort((a, b) {
+    final aTime = a['created_at'] as String?;
+    final bTime = b['created_at'] as String?;
+    if (aTime == null || bTime == null) return 0;
+    return bTime.compareTo(aTime);
+  });
+  
+  final list = consults.map((r) {
+    final apptId = r['appointment_id'] as String;
+    double? temperature;
+    try {
+      final match = temps.firstWhere((t) => t['appointment_id'] == apptId);
+      temperature = (match['temperature'] as num?)?.toDouble();
+    } catch (_) {}
+    return Consultation(
+      id: r['id'] as String,
+      appointmentId: apptId,
+      patientId: r['patient_id'] as String,
+      doctorId: r['doctor_id'] as String,
+      status: (r['status'] as String) == 'in_progress' ? ConsultationStatus.inProgress : ConsultationStatus.completed,
+      notes: r['notes'] as String?,
+      diagnosis: r['diagnosis'] as String?,
+      recommendations: r['recommendations'] as String?,
+      vitals: ConsultationVitals(temperatureCelsius: temperature),
+    );
+  }).toList();
+  
+  return AsyncData(list);
 });
 
 /// Supabase Realtime stream of active prescriptions
@@ -76,7 +121,7 @@ final realtimePrescriptionsStreamProvider = StreamProvider.autoDispose<List<Pres
 
 /// Stream of the latest **unassigned** IoT temperature scan (patient_id IS NULL).
 /// Only unclaimed scans are surfaced so the clinic assistant can explicitly
-/// link one to a specific patient — preventing cross-patient contamination.
+/// link one to a specific patient � preventing cross-patient contamination.
 final latestTemperatureLogProvider = StreamProvider.autoDispose<Map<String, dynamic>?>((ref) {
   if (Env.isMockMode) {
     // Simulated stream for mock mode
@@ -176,3 +221,13 @@ final consultationForAppointmentProvider = FutureProvider.family<Consultation?, 
 /// ensuring they immediately disappear from the queue without waiting for network/socket latency.
 final dispensedConsultationsProvider = StateProvider<Set<String>>((ref) => <String>{});
 
+final pharmacyQueueProvider = Provider.family<List<Prescription>, String>((ref, pharmacyId) {
+  ref.watch(prescriptionsRevisionProvider);
+  return ref.watch(pharmacistRepositoryProvider).getQueue(pharmacyId);
+});
+
+final awaitingPrescriptionProvider = Provider<List<Consultation>>((ref) {
+  ref.watch(prescriptionsRevisionProvider);
+  ref.watch(appointmentsRevisionProvider);
+  return ref.watch(pharmacistRepositoryProvider).getAwaitingPrescription();
+});

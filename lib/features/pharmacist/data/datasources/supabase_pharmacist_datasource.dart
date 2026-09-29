@@ -45,16 +45,14 @@ class SupabasePharmacistDataSource implements PharmacistDataSource {
         .from('consultations')
         .select('id')
         .eq('appointment_id', appointmentId)
-        .maybeSingle();
+        .limit(1).maybeSingle();
 
     String consultationId;
 
     if (res != null) {
-      // Update existing consultation with vitals note
+      // Update existing consultation if needed. We don't need to update vitals here
+      // as they are stored in temperature_logs table.
       consultationId = res['id'] as String;
-      await _client.from('consultations').update({
-        'vitals': {'temperatureCelsius': temperature},
-      }).eq('id', consultationId);
     } else {
       // Create new consultation for this appointment
       final inserted = await _client.from('consultations').insert({
@@ -62,7 +60,6 @@ class SupabasePharmacistDataSource implements PharmacistDataSource {
         'patient_id': patientId,
         'doctor_id': doctorId,
         'status': 'in_progress',
-        'vitals': {'temperatureCelsius': temperature},
       }).select('id').single();
       consultationId = inserted['id'] as String;
     }
@@ -102,7 +99,7 @@ class SupabasePharmacistDataSource implements PharmacistDataSource {
         .from('consultations')
         .select('id')
         .eq('appointment_id', appointmentId)
-        .maybeSingle();
+        .limit(1).maybeSingle();
 
     if (res != null) {
       return res['id'] as String;

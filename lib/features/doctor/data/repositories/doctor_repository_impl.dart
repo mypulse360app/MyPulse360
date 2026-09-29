@@ -16,7 +16,7 @@ class DoctorRepositoryImpl implements DoctorRepository {
   List<Appointment> getTodaysQueue(String doctorId) => _dataSource.getTodaysQueue(doctorId);
 
   @override
-  Consultation startOrGetConsultation(String appointmentId, String patientId, String doctorId) =>
+  Future<Consultation> startOrGetConsultation(String appointmentId, String patientId, String doctorId) =>
       _dataSource.startOrGetConsultation(appointmentId, patientId, doctorId);
 
   @override

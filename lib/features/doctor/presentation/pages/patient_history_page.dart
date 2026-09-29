@@ -31,8 +31,8 @@ import '../widgets/sticky_submit_bar.dart';
 const _medicationNoteHint = 'e.g. Needs Metformin 500mg refill, 2x daily';
 
 /// Doctor-facing read view of a patient's prior visits, prescriptions, and
-/// health trends. The doctor's role is review-only — diagnosing from
-/// history, not documenting a consultation — so when opened from today's
+/// health trends. The doctor's role is review-only â€” diagnosing from
+/// history, not documenting a consultation â€” so when opened from today's
 /// queue ([appointmentId] set), the only action available is a plain
 /// "Mark as Seen" that hands the visit off to The clinic assistant to prescribe.
 class PatientHistoryPage extends ConsumerStatefulWidget {
@@ -62,7 +62,8 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
 
   Future<void> _markAsSeen(String appointmentId, String doctorId) async {
     setState(() => _marking = true);
-    final existing = ref
+    try {
+      final existing = await ref
         .read(doctorRepositoryProvider)
         .startOrGetConsultation(appointmentId, widget.patientId, doctorId);
     final notes = _medicationNoteController.text.trim();
@@ -71,7 +72,7 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
       appointmentId: existing.appointmentId,
       patientId: existing.patientId,
       doctorId: existing.doctorId,
-      status: existing.status,
+      status: ConsultationStatus.completed,
       notes: notes,
     );
     await ref.read(doctorRepositoryProvider).submitConsultation(consultation);
@@ -110,9 +111,12 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
     ref.read(appointmentsRevisionProvider.notifier).state++;
     if (!mounted) return;
     setState(() => _marking = false);
-    
-    // Instead of pop (which might just go back in shell), explicitly go to dashboard
-    context.go(RoutePaths.doctorDashboard);
+      context.go(RoutePaths.doctorDashboard);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _marking = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red));
+    }
   }
 
   @override
@@ -123,7 +127,7 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
         .watch(userProfileProvider(widget.patientId))
         .valueOrNull;
     final profileAsync = ref.watch(patientProfileProvider(widget.patientId));
-    final consultations = ref.watch(patientHistoryProvider(widget.patientId));
+    final consultations = ref.watch(patientHistoryProvider(widget.patientId)).valueOrNull ?? const <Consultation>[];
     final prescriptions = ref.watch(
       patientPrescriptionsProvider(widget.patientId),
     );
@@ -234,7 +238,7 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              "Today's visit — ${pendingAppointment.appointmentType}"
+                              "Today's visit â€” ${pendingAppointment.appointmentType}"
                               '${pendingAppointment.reasonForVisit != null ? " · ${pendingAppointment.reasonForVisit}" : ''}',
                               style: TextStyle(
                                 fontSize: 12,
@@ -286,7 +290,7 @@ class _PatientHistoryPageState extends ConsumerState<PatientHistoryPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Optional — a quick note on what this patient needs. The clinic assistant '
+                  'Optional â€” a quick note on what this patient needs. The clinic assistant '
                   'still enters the formal e-prescription.',
                   style: TextStyle(fontSize: 11.5, color: colors.textSecondary),
                 ),

@@ -7,7 +7,7 @@ abstract class DoctorRepository {
 
   List<Appointment> getTodaysQueue(String doctorId);
 
-  Consultation startOrGetConsultation(String appointmentId, String patientId, String doctorId);
+  Future<Consultation> startOrGetConsultation(String appointmentId, String patientId, String doctorId);
 
   Future<Consultation> submitConsultation(Consultation consultation);
 

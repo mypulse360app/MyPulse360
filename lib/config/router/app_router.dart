@@ -28,6 +28,7 @@ import '../../features/patient/presentation/pages/profile_page.dart';
 import '../../features/patient/presentation/providers/patient_providers.dart';
 import '../../features/pharmacist/presentation/pages/create_prescription_page.dart';
 import '../../features/pharmacist/presentation/pages/pharmacist_dashboard_page.dart';
+import '../../features/pharmacist/presentation/pages/pharmacist_prescriptions_page.dart';
 import '../../features/pharmacist/presentation/pages/prescription_verification_page.dart';
 import '../../features/pharmacist/presentation/pages/process_prescription_page.dart';
 import '../../features/prescriptions/presentation/pages/prescriptions_list_page.dart';
@@ -295,6 +296,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 builder: (_, state) => ProcessPrescriptionPage(
                   consultationId: state.pathParameters['consultationId']!,
                 ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: RoutePaths.pharmacistPrescriptions,
+                builder: (_, _) => const PharmacistPrescriptionsPage(),
               ),
             ],
           ),

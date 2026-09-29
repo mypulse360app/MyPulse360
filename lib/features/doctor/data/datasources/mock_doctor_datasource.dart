@@ -35,9 +35,9 @@ class MockDoctorDataSource implements DoctorDataSource {
   }
 
   @override
-  Consultation startOrGetConsultation(String appointmentId, String patientId, String doctorId) {
+  Future<Consultation> startOrGetConsultation(String appointmentId, String patientId, String doctorId) {
     for (final c in _db.consultations) {
-      if (c.appointmentId == appointmentId) return c;
+      if (c.appointmentId == appointmentId) return Future.value(c);
     }
     final consultation = Consultation(
       id: generateId(),
@@ -47,7 +47,7 @@ class MockDoctorDataSource implements DoctorDataSource {
       status: ConsultationStatus.inProgress,
     );
     _db.upsertConsultation(consultation);
-    return consultation;
+    return Future.value(consultation);
   }
 
   @override

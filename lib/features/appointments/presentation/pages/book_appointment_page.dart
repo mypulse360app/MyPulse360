@@ -7,6 +7,7 @@ import '../../../../shared/presentation/widgets/async_section.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../patient/presentation/providers/patient_providers.dart';
 import '../../domain/entities/time_slot.dart';
+import '../../domain/entities/appointment.dart';
 import '../providers/appointments_providers.dart';
 import '../widgets/month_calendar.dart';
 import '../widgets/time_slot_grid.dart';
@@ -59,14 +60,7 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
   Future<void> _book(String doctorId, String patientId) async {
     final slot = _selectedSlot;
     if (slot == null || _customTypeMissing) return;
-    
-    final isClinicClosed = ref.read(clinicClosedProvider);
-    if (isClinicClosed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('The clinic is currently closed. Booking is disabled.')),
-      );
-      return;
-    }
+
 
     setState(() => _booking = true);
     try {
@@ -361,8 +355,6 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
                                 AsyncSection(
                                   value: slotsAsync,
                                   data: (rawSlots) {
-                                    final isClinicClosed = ref.watch(clinicClosedProvider);
-                                    
                                     final slots = rawSlots.map((s) {
                                       final selected =
                                           _selectedSlot != null &&
@@ -380,28 +372,7 @@ class _BookAppointmentPageState extends ConsumerState<BookAppointmentPage> {
                                           ),
                                         ),
                                         const SizedBox(height: 20),
-                                        if (isClinicClosed)
-                                        Container(
-                                          padding: const EdgeInsets.all(20),
-                                          decoration: BoxDecoration(
-                                            color: colors.danger.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(16),
-                                            border: Border.all(color: colors.danger.withValues(alpha: 0.3)),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.report_problem_outlined, color: colors.danger),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: Text(
-                                                  'The clinic has been temporarily closed by staff for today. Booking is disabled.',
-                                                  style: TextStyle(color: colors.danger, fontSize: 14),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        )
-                                      else if (slots.every((s) => s.isDisabled))
+                                        if (slots.every((s) => s.isDisabled))
                                         Container(
                                           padding: const EdgeInsets.all(20),
                                           decoration: BoxDecoration(
@@ -441,7 +412,7 @@ const SizedBox(height: 48),
                                       SizedBox(
                                         width: double.infinity,
                                         child: GestureDetector(
-                                          onTap: isClinicClosed || _selectedSlot == null || _booking 
+                                          onTap: _selectedSlot == null || _booking 
                                               ? null 
                                               : () => _book(doctor!.id, user.id),
                                           child: AnimatedContainer(
@@ -449,7 +420,7 @@ const SizedBox(height: 48),
                                             height: 56,
                                             decoration: BoxDecoration(
                                               borderRadius: BorderRadius.circular(28),
-                                              color: isClinicClosed || _selectedSlot == null 
+                                              color: _selectedSlot == null 
                                                   ? colors.surfaceMuted 
                                                   : colors.patientAccent,
                                             ),
@@ -464,7 +435,7 @@ const SizedBox(height: 48),
                                                     style: TextStyle(
                                                       fontSize: 16, 
                                                       fontWeight: FontWeight.w600,
-                                                      color: isClinicClosed || _selectedSlot == null || _selectedReason == null ? colors.textTertiary : Colors.white,
+                                                      color: _selectedSlot == null || _selectedReason == null ? colors.textTertiary : Colors.white,
                                                     ),
                                                   ),
                                             ),
