@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../config/env/env.dart';
@@ -261,7 +261,21 @@ class _ProcessPrescriptionPageState
         ?.where((c) => c.id == widget.consultationId)
         .firstOrNull;
     final consultationAsync = ref.watch(consultationProvider(widget.consultationId));
-    final consultation = liveConsultation ?? consultationAsync.valueOrNull;
+    final tempConsultation = liveConsultation ?? consultationAsync.valueOrNull;
+    final Consultation? consultation = tempConsultation == null ? null : (
+      liveConsultation != null ? 
+      Consultation(
+        id: tempConsultation.id,
+        appointmentId: tempConsultation.appointmentId,
+        patientId: tempConsultation.patientId,
+        doctorId: tempConsultation.doctorId,
+        status: tempConsultation.status,
+        vitals: consultationAsync.valueOrNull?.vitals ?? tempConsultation.vitals,
+        diagnosis: tempConsultation.diagnosis,
+        notes: tempConsultation.notes,
+        recommendations: tempConsultation.recommendations,
+      ) : tempConsultation
+    );
     
     if (consultation == null) {
       if (consultationAsync.isLoading) {

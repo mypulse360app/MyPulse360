@@ -27,7 +27,7 @@ class SupabaseAppointmentsDataSource implements AppointmentsDataSource {
           .select(_cols)
           .eq('patient_id', patientId)
           // `ascending: true` is NOT the default here. postgrest-dart's
-          // `order()` defaults to DESCENDING — the opposite of SQL and of
+          // `order()` defaults to DESCENDING â€” the opposite of SQL and of
           // postgrest-js. Omitting it silently returns newest-first, which
           // renders both tabs of appointments_list_page backwards.
           .order('scheduled_at', ascending: true);
@@ -146,7 +146,6 @@ class SupabaseAppointmentsDataSource implements AppointmentsDataSource {
               .where((a) {
                 final at = a.scheduledAt.toLocal();
                 return a.status != AppointmentStatus.cancelled &&
-                    a.status != AppointmentStatus.completed &&
                     at.year == today.year &&
                     at.month == today.month &&
                     at.day == today.day;

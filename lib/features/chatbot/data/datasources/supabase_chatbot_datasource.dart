@@ -209,11 +209,11 @@ class SupabaseChatbotDataSource implements ChatbotDataSource {
       if (ids.isNotEmpty) {
         final items = await _client
             .from('prescription_items')
-            .select('medication_name, strength')
+            .select('medication_name, dosage, instructions, frequency')
             .inFilter('prescription_id', ids);
         medications = [
           for (final r in items)
-            '${r['medication_name']} ${r['strength']}',
+            '${r['medication_name']}${r['dosage'] != null && r['dosage'].toString().isNotEmpty ? ' ${r['dosage']}' : ''}${r['instructions'] != null && r['instructions'].toString().isNotEmpty ? ' (${r['instructions']})' : ''}${r['frequency'] != null && r['frequency'].toString().isNotEmpty ? ' - ${r['frequency']}' : ''}',
         ];
       }
     } catch (_) {
